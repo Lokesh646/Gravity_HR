@@ -5,19 +5,69 @@ const ROLES = {
     MANAGER: 'Manager'
 };
 
-function login(name, role, id) {
-    const finalId = id || generateId(name);
+function login(id, pin) {
+    if (!id || !pin) {
+        alert("Please enter both ID and PIN.");
+        return;
+    }
+
+    // 1. Check for Default Admin (if valid)
+    if (id === 'admin' && pin === 'admin123') {
+        const adminUser = {
+            id: 'admin',
+            name: 'System Admin',
+            role: 'Admin'
+        };
+        finalizeLogin(adminUser);
+        return;
+    }
+
+    // 2. Check against stored employees
+    const stateData = localStorage.getItem('gravity_hrm_state');
+    let authenticatedUser = null;
+
+    if (stateData) {
+        const state = JSON.parse(stateData);
+        const employees = state.employees || [];
+
+        // Find employee by ID (case-insensitive)
+        const employee = employees.find(e => e.id.toLowerCase() === id.toLowerCase());
+
+        if (employee) {
+            // Check PIN (Secret Code)
+            // If secretCode is missing (legacy), validation fails (or could default to ID)
+            // We enforce secretCode check.
+            if (employee.secretCode === pin) {
+                authenticatedUser = {
+                    id: employee.id,
+                    name: employee.name,
+                    role: employee.role
+                };
+            }
+        }
+    }
+
+    // 3. Result
+    if (authenticatedUser) {
+        finalizeLogin(authenticatedUser);
+    } else {
+        alert("Invalid ID or PIN. Please try again.");
+    }
+}
+
+function finalizeLogin(user) {
+    const { id, name, role } = user;
 
     // New structure
-    localStorage.setItem('currentUser', JSON.stringify({ name, role, id: finalId }));
+    localStorage.setItem('currentUser', JSON.stringify({ name, role, id }));
 
     // Legacy support
     localStorage.setItem('currentEmployee', name);
     localStorage.setItem('currentRole', role);
-    localStorage.setItem('currentID', finalId);
+    localStorage.setItem('currentID', id);
 
     // Record Login Session for Attendance
-    recordSession(name, finalId, role);
+    recordSession(name, id, role);
 
     // Determine target dashboard
     let targetDash = 'dashboard.html';
