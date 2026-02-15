@@ -153,9 +153,10 @@ body {
 }
 
 /* Ensure navigation is clickable */
+/* Ensure navigation is clickable */
 .sidebar {
     pointer-events: auto !important;
-    z-index: 100 !important;
+    /* z-index removed to allow mobile.css to override with 1001 */
 }
 
 .nav-item {
