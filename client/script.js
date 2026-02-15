@@ -721,6 +721,16 @@ const initTrafficChart = (dateStr = null) => {
         });
     }
 
+    // --- VISUAL FIX: If data is empty for today, show dummy baseline so it's not just "flat" ---
+    // This helps user see the "bar" potential immediately
+    const totalVol = chartData.reduce((a, b) => a + b, 0);
+    if (totalVol === 0 && isToday) {
+        // Optional: Pre-fill with some zeroes or leave as is. 
+        // User complained about "straight graph" (flat line). 
+        // A flat bar chart is just empty space. 
+        // Let's leave it as 0 but the type change is key.
+    }
+
     if (trafficChartInstance) {
         trafficChartInstance.destroy();
     }
@@ -729,29 +739,25 @@ const initTrafficChart = (dateStr = null) => {
     const textColor = isDark ? '#f8fafc' : '#1e293b';
     const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
 
-    // Financial Gradient
+    // Financial Gradient for Bars
     const gtx = ctx.getContext('2d');
     const gradient = gtx.createLinearGradient(0, 0, 0, 350);
-    gradient.addColorStop(0, 'rgba(0, 242, 254, 0.35)');
-    gradient.addColorStop(1, 'rgba(0, 242, 254, 0)');
+    gradient.addColorStop(0, 'rgba(0, 242, 254, 0.8)');
+    gradient.addColorStop(1, 'rgba(0, 242, 254, 0.2)');
 
     trafficChartInstance = new Chart(ctx, {
-        type: 'line',
+        type: 'bar', // CHANGED FROM LINE TO BAR
         data: {
             labels: labels,
             datasets: [{
                 label: 'Volume',
                 data: chartData,
-                borderColor: '#00f2fe',
-                borderWidth: 3,
                 backgroundColor: gradient,
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: '#00f2fe',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2,
-                pointRadius: 4,
-                pointHoverRadius: 6
+                borderColor: '#00f2fe',
+                borderWidth: 1,
+                borderRadius: 8, // Rounded corners
+                barPercentage: 0.6,
+                categoryPercentage: 0.8
             }]
         },
         options: {
@@ -765,7 +771,10 @@ const initTrafficChart = (dateStr = null) => {
                     bodyColor: '#fff',
                     padding: 10,
                     cornerRadius: 8,
-                    displayColors: false
+                    displayColors: false,
+                    callbacks: {
+                        title: (items) => `Vehicle: ${items[0].label}`
+                    }
                 }
             },
             scales: {
@@ -778,6 +787,10 @@ const initTrafficChart = (dateStr = null) => {
                     grid: { display: false },
                     ticks: { color: textColor, font: { size: 10 } }
                 }
+            },
+            animation: {
+                duration: 1000,
+                easing: 'easeOutQuart'
             }
         }
     });
