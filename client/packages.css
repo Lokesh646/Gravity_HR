@@ -1,0 +1,76 @@
+/* PACKAGE SECTION STYLES */
+.packages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.package-card {
+    position: relative;
+    padding: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.package-card:hover {
+    transform: translateY(-5px);
+}
+
+.package-card h3 {
+    margin-bottom: 0.5rem;
+    color: var(--primary-color);
+}
+
+.package-summary {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+}
+
+.summary-line {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.summary-line.highlight {
+    font-weight: 700;
+    color: var(--primary-color);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+/* PREMIUM CREATE BUTTON */
+.premium-btn {
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    transition: all 0.3s ease;
+}
+
+.premium-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+/* MODAL REFINEMENTS */
+#packageModal .modal-content {
+    max-width: 600px;
+}
+
+.divider {
+    height: 1px;
+    background: var(--glass-border);
+    margin: 1.5rem 0;
+}

@@ -1,0 +1,335 @@
+.attendance-container {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 1.5rem;
+    padding-bottom: 2rem;
+}
+
+.calendar-section {
+    display: flex;
+    flex-direction: column;
+    padding: 2rem !important;
+    background: #ffffff !important;
+    border: 2px solid #fee2e2 !important;
+    /* Soft pink border */
+    border-radius: 32px !important;
+    color: #1f2937 !important;
+    min-height: 520px;
+}
+
+[data-theme="dark"] .calendar-section {
+    background: #1e1b4b !important;
+    border-color: #312e81 !important;
+    color: #f8fafc !important;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: center;
+    /* Center the month like the image */
+    align-items: center;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.calendar-header h3 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #f43f5e;
+    /* Vibrant pink/rose */
+    letter-spacing: 2px;
+}
+
+.calendar-header button {
+    position: absolute;
+    background: transparent !important;
+    border: none !important;
+    color: #f43f5e !important;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.calendar-header button:hover {
+    background: rgba(244, 63, 94, 0.1) !important;
+}
+
+#prevMonth {
+    left: -0.5rem;
+}
+
+#nextMonth {
+    right: -0.5rem;
+}
+
+.calendar-grid-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-auto-rows: minmax(60px, auto);
+    /* Ensure rows have space */
+    gap: 0.4rem;
+}
+
+.calendar-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #64748b;
+    /* Sharper grey for visibility */
+    min-height: 60px;
+}
+
+[data-theme="dark"] .calendar-day {
+    color: #cbd5e1;
+    /* Lighter grey for dark mode */
+}
+
+.calendar-day:hover {
+    background: rgba(244, 63, 94, 0.08) !important;
+}
+
+.calendar-day.active {
+    background: #f43f5e !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
+}
+
+.calendar-day.other-month {
+    pointer-events: none;
+    color: transparent !important;
+    background: transparent !important;
+}
+
+/* Highlight Colors (Matching text and background) */
+.day-sunday {
+    color: #f43f5e !important;
+    font-weight: 700;
+}
+
+.day-short {
+    color: #f59e0b !important;
+    background: #fffbeb !important;
+}
+
+.day-complete {
+    color: #10b981 !important;
+    background: #ecfdf5 !important;
+}
+
+[data-theme="dark"] .day-sunday {
+    background: rgba(244, 63, 94, 0.1) !important;
+    color: #fb7185 !important;
+}
+
+[data-theme="dark"] .day-short {
+    background: rgba(245, 158, 11, 0.1) !important;
+    color: #fbbf24 !important;
+}
+
+[data-theme="dark"] .day-complete {
+    background: rgba(16, 185, 129, 0.1) !important;
+    color: #34d399 !important;
+}
+
+.calendar-legend {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.dot.pink {
+    background: #fce7f3;
+    border: 1px solid #9d174d;
+}
+
+.dot.orange {
+    background: #ffedd5;
+    border: 1px solid #9a3412;
+}
+
+.dot.green {
+    background: #dcfce7;
+    border: 1px solid #166534;
+}
+
+/* Details Section */
+.details-section {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem !important;
+    overflow: hidden;
+}
+
+.details-header {
+    margin-bottom: 2rem;
+}
+
+.details-header h3 {
+    margin-bottom: 0.25rem;
+}
+
+.details-header p {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+}
+
+.details-content {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-dim);
+    text-align: center;
+    opacity: 0.5;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.log-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.log-item.expandable {
+    cursor: pointer;
+}
+
+.log-item.expandable:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.log-item-header {
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.log-item.active .log-item-header {
+    border-bottom: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.log-item-sessions {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.log-item.active .log-item-sessions {
+    max-height: 500px;
+    /* Adjust as needed */
+}
+
+.session-row {
+    padding: 0.8rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.session-row:last-child {
+    border-bottom: none;
+}
+
+.expand-icon {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    transition: transform 0.3s ease;
+}
+
+.log-item.active .expand-icon {
+    transform: rotate(180deg);
+}
+
+.log-emp-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.log-name {
+    font-weight: 600;
+}
+
+.log-id {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+}
+
+.log-times {
+    text-align: right;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.log-duration {
+    font-size: 0.8rem;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.log-total-time {
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.log-time-range {
+    font-size: 0.9rem;
+}

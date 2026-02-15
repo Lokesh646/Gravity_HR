@@ -1,0 +1,6 @@
+@import 'dashboard-common.css';
+
+/* Team Leader Specific Dashboard Styles */
+.tl-stats-container {
+    border-left: 4px solid var(--secondary-color);
+}

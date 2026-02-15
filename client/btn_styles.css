@@ -1,0 +1,28 @@
+/* Action Buttons */
+.btn-icon {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: var(--text-light);
+    width: 32px;
+    /* Small square */
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.btn-icon:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.edit-btn:hover {
+    background: #3b82f6;
+    /* Blue for edit */
+}

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Leader Debug Tool</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #00f2fe;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .section h2 {
+            color: #a855f7;
+            margin-top: 0;
+        }
+
+        pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+
+        .btn {
+            background: #00f2fe;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            background: #00d4e0;
+        }
+
+        .error {
+            color: #ef4444;
+        }
+
+        .success {
+            color: #10b981;
+        }
+
+        .warning {
+            color: #f59e0b;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔍 Team Leader Dashboard Debug Tool</h1>
+    <p>This tool helps diagnose why team leader data is not showing on the dashboard.</p>
+
+    <div class="section">
+        <h2>Current User Info</h2>
+        <div id="currentUser"></div>
+    </div>
+
+    <div class="section">
+        <h2>STATE Data</h2>
+        <button class="btn" onclick="loadStateData()">Reload STATE</button>
+        <div id="stateData"></div>
+    </div>
+
+    <div class="section">
+        <h2>Team Leader Stats</h2>
+        <div id="teamLeaderStats"></div>
+    </div>
+
+    <div class="section">
+        <h2>All Employees</h2>
+        <div id="allEmployees"></div>
+    </div>
+
+    <div class="section">
+        <h2>Team Members (Reporting to Team Leader)</h2>
+        <div id="teamMembers"></div>
+    </div>
+
+    <div class="section">
+        <h2>Actions</h2>
+        <button class="btn" onclick="window.location.href='tl-dashboard.html'">Go to Team Leader Dashboard</button>
+        <button class="btn" onclick="window.location.href='login.html'">Go to Login</button>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        function displayJSON(data, elementId) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        }
+
+        function loadStateData() {
+            const stateStr = localStorage.getItem('gravity_hrm_state');
+            const currentUserStr = localStorage.getItem('currentUser');
+
+            // Display current user
+            if (currentUserStr) {
+                const user = JSON.parse(currentUserStr);
+                document.getElementById('currentUser').innerHTML = `
+                    <p><strong>Name:</strong> ${user.name}</p>
+                    <p><strong>Role:</strong> ${user.role}</p>
+                    <p><strong>ID:</strong> ${user.id}</p>
+                `;
+
+                // Get team leader stats
+                if (user.role === 'Team Leader' && window.DashboardData) {
+                    const stats = window.DashboardData.getTeamLeaderStats(user.name);
+                    document.getElementById('teamLeaderStats').innerHTML = `
+                        <p class="${stats.total > 0 ? 'success' : 'error'}"><strong>Total Team Members:</strong> ${stats.total}</p>
+                        <p class="success"><strong>Active:</strong> ${stats.active}</p>
+                        <p class="warning"><strong>Inactive:</strong> ${stats.inactive}</p>
+                        ${stats.teamMembers && stats.teamMembers.length > 0 ?
+                            '<h3>Team Members:</h3><pre>' + JSON.stringify(stats.teamMembers, null, 2) + '</pre>' :
+                            '<p class="error">No team members found</p>'}
+                    `;
+                } else {
+                    document.getElementById('teamLeaderStats').innerHTML = '<p class="warning">Not logged in as Team Leader</p>';
+                }
+            } else {
+                document.getElementById('currentUser').innerHTML = '<p class="error">No user logged in</p>';
+            }
+
+            // Display STATE
+            if (stateStr) {
+                const state = JSON.parse(stateStr);
+                document.getElementById('stateData').innerHTML = `
+                    <p><strong>Total Employees:</strong> ${state.employees ? state.employees.length : 0}</p>
+                    <p><strong>Total Packages:</strong> ${state.packages ? state.packages.length : 0}</p>
+                `;
+
+                // Display all employees
+                if (state.employees && state.employees.length > 0) {
+                    const employeeTable = state.employees.map(emp => `
+                        <tr>
+                            <td>${emp.id}</td>
+                            <td>${emp.name}</td>
+                            <td>${emp.role}</td>
+                            <td>${emp.reportsTo || 'None'}</td>
+                            <td>${emp.status}</td>
+                            <td>${emp.lastLogin ? new Date(emp.lastLogin).toLocaleString() : 'Never'}</td>
+                        </tr>
+                    `).join('');
+
+                    document.getElementById('allEmployees').innerHTML = `
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: rgba(255,255,255,0.1);">
+                                    <th style="padding: 10px; text-align: left;">ID</th>
+                                    <th style="padding: 10px; text-align: left;">Name</th>
+                                    <th style="padding: 10px; text-align: left;">Role</th>
+                                    <th style="padding: 10px; text-align: left;">Reports To</th>
+                                    <th style="padding: 10px; text-align: left;">Status</th>
+                                    <th style="padding: 10px; text-align: left;">Last Login</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${employeeTable}
+                            </tbody>
+                        </table>
+                    `;
+
+                    // Find team members for current team leader
+                    if (currentUserStr) {
+                        const user = JSON.parse(currentUserStr);
+                        if (user.role === 'Team Leader') {
+                            const teamLeader = state.employees.find(e => e.name === user.name && e.role === 'Team Leader');
+                            if (teamLeader) {
+                                const members = state.employees.filter(e => e.reportsTo === teamLeader.id);
+                                if (members.length > 0) {
+                                    const memberTable = members.map(emp => `
+                                        <tr>
+                                            <td>${emp.id}</td>
+                                            <td>${emp.name}</td>
+                                            <td>${emp.role}</td>
+                                            <td>${emp.lastLogin ? '<span class="success">Yes</span>' : '<span class="error">No</span>'}</td>
+                                        </tr>
+                                    `).join('');
+
+                                    document.getElementById('teamMembers').innerHTML = `
+                                        <p class="success">Found ${members.length} team member(s) reporting to ${teamLeader.name} (ID: ${teamLeader.id})</p>
+                                        <table style="width: 100%; border-collapse: collapse;">
+                                            <thead>
+                                                <tr style="background: rgba(255,255,255,0.1);">
+                                                    <th style="padding: 10px; text-align: left;">ID</th>
+                                                    <th style="padding: 10px; text-align: left;">Name</th>
+                                                    <th style="padding: 10px; text-align: left;">Role</th>
+                                                    <th style="padding: 10px; text-align: left;">Has Logged In</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${memberTable}
+                                            </tbody>
+                                        </table>
+                                    `;
+                                } else {
+                                    document.getElementById('teamMembers').innerHTML = `
+                                        <p class="error">No employees are assigned to report to ${teamLeader.name} (ID: ${teamLeader.id})</p>
+                                        <p class="warning">To fix this, you need to:</p>
+                                        <ol>
+                                            <li>Go to the Employees page</li>
+                                            <li>Edit an employee</li>
+                                            <li>Set their "Assign Team Leader" field to "${teamLeader.name}"</li>
+                                        </ol>
+                                    `;
+                                }
+                            } else {
+                                document.getElementById('teamMembers').innerHTML = '<p class="error">Team Leader record not found in STATE.employees</p>';
+                            }
+                        }
+                    }
+                } else {
+                    document.getElementById('allEmployees').innerHTML = '<p class="error">No employees in STATE</p>';
+                }
+            } else {
+                document.getElementById('stateData').innerHTML = '<p class="error">No STATE data found in localStorage</p>';
+            }
+        }
+
+        // Load data on page load
+        loadStateData();
+    </script>
+</body>
+
+</html>

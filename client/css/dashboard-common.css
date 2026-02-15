@@ -1,0 +1,67 @@
+/* DASHBOARD COMMON STYLES */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+}
+
+.icon-box {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.stat-info h3 {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.stat-info .stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.chart-container-panel {
+    padding: 1.5rem;
+    width: 100%;
+    margin-top: 2rem;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.ios-section-title {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.chart-select {
+    padding: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    color: var(--text-main);
+}

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salary Packages - Gravity HR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body data-page="packages">
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="app-layout">
+        <!-- SIDEBAR -->
+        <aside class="sidebar glass-panel">
+            <div class="brand">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>Gravity HR</span>
+            </div>
+            <nav class="nav-links">
+                <!-- Links injected by render-logic.js -->
+            </nav>
+            <div style="margin-top: auto; padding: 1rem 1.5rem;">
+                <button id="themeToggle" class="btn-secondary btn-sm"
+                    style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--input-bg);">
+                    <i class="fa-solid fa-moon"></i>
+                    <span>Dark Mode</span>
+                </button>
+                <button onclick="logout()" class="btn-secondary btn-sm"
+                    style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--input-bg); margin-top: 10px; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+            <a href="user.html" class="user-profile" style="text-decoration: none; color: inherit; cursor: pointer;">
+                <div class="avatar">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="user-info">
+                    <span class="name" id="sidebarUserName">Admin User</span>
+                    <span class="role" id="sidebarUserRole">Manager</span>
+                </div>
+            </a>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="main-content">
+            <header class="section-header">
+                <div>
+                    <h2>Salary Packages</h2>
+                    <p>Manage standard salary structures</p>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <a href="dashboard.html" class="btn-secondary btn-sm" style="text-decoration: none;">
+                        <i class="fa-solid fa-house"></i> Back to Dashboard
+                    </a>
+                    <button id="addPackageBtn" class="btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Create
+                        Package</button>
+                </div>
+            </header>
+
+            <div class="packages-grid" id="packagesGrid"
+                style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+                <!-- Packages will be injected here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- ADD PACKAGE MODAL -->
+    <div id="packageModal" class="modal-overlay" style="display: none;">
+        <div class="ios-formal-modal modal-content">
+            <div class="ios-formal-header">
+                <h2 id="pkgModalTitle">Create Salary Package</h2>
+                <button class="close-modal-pkg">&times;</button>
+            </div>
+
+            <form id="addPackageForm" style="padding: 0 2rem 2rem;">
+
+                <h4 class="ios-section-title" style="margin-top: 1rem;">General Info</h4>
+                <div class="ios-input-group">
+                    <label>Package Name</label>
+                    <input type="text" id="pkgName" class="ios-input" placeholder="e.g. Senior Software Engineer"
+                        required>
+                </div>
+
+                <h4 class="ios-section-title">Earnings (Monthly)</h4>
+                <div class="ios-form-grid">
+                    <div class="ios-input-group">
+                        <label>Basic Pay</label>
+                        <input type="number" id="pkgBasic" class="ios-input" placeholder="0.00" required>
+                    </div>
+                    <div class="ios-input-group">
+                        <label>HRA</label>
+                        <input type="number" id="pkgHra" class="ios-input" placeholder="0.00">
+                    </div>
+                    <div class="ios-input-group">
+                        <label>Conveyance</label>
+                        <input type="number" id="pkgConveyance" class="ios-input" placeholder="0.00">
+                    </div>
+                    <div class="ios-input-group">
+                        <label>Medical Allowance</label>
+                        <input type="number" id="pkgMedical" class="ios-input" placeholder="0.00">
+                    </div>
+                    <div class="ios-input-group">
+                        <label>Special Allowance</label>
+                        <input type="number" id="pkgSpecial" class="ios-input" placeholder="0.00">
+                    </div>
+                </div>
+                <div class="ios-form-grid" style="margin-top: 1rem;">
+                    <div class="ios-input-group">
+                        <label>Special Bonus</label>
+                        <input type="number" id="pkgBonus" class="ios-input" placeholder="0.00">
+                    </div>
+                    <div class="ios-input-group">
+                        <label>Dearness Allowance (DA)</label>
+                        <input type="number" id="pkgDA" class="ios-input" placeholder="0.00">
+                    </div>
+                </div>
+                <div class="ios-form-grid" style="margin-top: 1rem;">
+                    <div class="ios-input-group">
+                        <label>Variable Allowance</label>
+                        <input type="number" id="pkgVariable" class="ios-input" placeholder="0.00">
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+                <h4>Deductions (Monthly)</h4>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>PF</label>
+                        <input type="number" id="pkgPf" placeholder="0.00">
+                    </div>
+                    <div class="input-group">
+                        <label>Tax</label>
+                        <input type="number" id="pkgTax" placeholder="0.00">
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+                <div class="package-summary"
+                    style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Gross Earning:</span>
+                        <span id="pkgPreviewGross">0.00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Total Deductions:</span>
+                        <span id="pkgPreviewDed">0.00</span>
+                    </div>
+                    <div
+                        style="display: flex; justify-content: space-between; font-weight: bold; color: var(--primary-color);">
+                        <span>Net Pay:</span>
+                        <span id="pkgPreviewNet">0.00</span>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary close-modal-pkg-btn">Cancel</button>
+                    <button type="submit" id="pkgSubmitBtn" class="btn-primary">Create Package</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SUCCESS MODAL -->
+    <div id="successModal" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 400px; text-align: center; padding: 3rem 2rem;">
+            <div class="success-icon"
+                style="width: 80px; height: 80px; background: rgba(34, 197, 94, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: #22c55e; font-size: 2.5rem;">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <h2 id="successTitle">Success!</h2>
+            <p id="successMsg">Operation completed successfully.</p>
+            <button id="successOkBtn" class="btn-primary" style="width: 100%;">Continue</button>
+        </div>
+    </div>
+
+    <!-- CONFIRM MODAL -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 400px; text-align: center; padding: 3rem 2rem;">
+            <div class="confirm-icon"
+                style="width: 80px; height: 80px; background: rgba(239, 68, 68, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: #ef4444; font-size: 2.5rem;">
+                <i class="fa-solid fa-circle-question"></i>
+            </div>
+            <h2 id="confirmTitle">Confirm Action</h2>
+            <p id="confirmMsg">Are you sure you want to proceed?</p>
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button id="confirmCancelBtn" class="btn-secondary" style="flex: 1;">Cancel</button>
+                <button id="confirmOkBtn" class="btn-primary"
+                    style="flex: 1; background: #ef4444; border-color: #ef4444;">Proceed</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/render-logic.js"></script>
+    <script src="script.js"></script>
+
+</body>
+
+</html>

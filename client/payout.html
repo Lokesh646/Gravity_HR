@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payroll - Gravity HR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body data-page="payout">
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="app-layout">
+        <!-- SIDEBAR -->
+        <aside class="sidebar glass-panel">
+            <div class="brand">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>Gravity HR</span>
+            </div>
+            <nav class="nav-links">
+                <!-- Links injected by render-logic.js -->
+            </nav>
+            <div style="margin-top: auto; padding: 1rem 1.5rem;">
+                <button id="themeToggle" class="btn-secondary btn-sm"
+                    style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--input-bg);">
+                    <i class="fa-solid fa-moon"></i>
+                    <span>Dark Mode</span>
+                </button>
+                <button onclick="logout()" class="btn-secondary btn-sm"
+                    style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--input-bg); margin-top: 10px; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+            <a href="user.html" class="user-profile" style="text-decoration: none; color: inherit; cursor: pointer;">
+                <div class="avatar">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="user-info">
+                    <span class="name" id="sidebarUserName">Admin User</span>
+                    <span class="role" id="sidebarUserRole">Manager</span>
+                </div>
+            </a>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="main-content">
+            <header class="section-header">
+                <div>
+                    <h2>Monthly Payroll</h2>
+                    <p>Process salaries and bonuses</p>
+                </div>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <a href="dashboard.html" class="btn-secondary btn-sm" style="text-decoration: none;">
+                        <i class="fa-solid fa-house"></i> Back to Dashboard
+                    </a>
+                    <input type="month" id="payrollDateFilter" class="glass-panel"
+                        style="padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--glass-border); color: var(--text-main); background: var(--input-bg);">
+                    <button id="importPayrollBtn" class="btn-secondary btn-sm">
+                        <i class="fa-solid fa-file-import"></i> Import Bulk
+                    </button>
+                    <button id="exportPayrollBtn" class="btn-secondary btn-sm">
+                        <i class="fa-solid fa-file-export"></i> Export Summary
+                    </button>
+                </div>
+            </header>
+
+            <div class="glass-panel table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Employee Name</th>
+                            <th>Employee ID</th>
+                            <th>Role</th>
+                            <th>Salary Package</th>
+                            <th>Base Net Pay</th>
+                            <th>Special Bonus</th>
+                            <th>Net Payable</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payrollTableBody">
+                        <!-- Injected by script.js -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- PRINTABLE AREA (Hidden from screen) -->
+            <div id="printableArea" style="display: none;">
+                <div class="glass-panel preview-container"
+                    style="background: white !important; color: #1e293b !important; padding: 2rem; border-radius: 0;">
+                    <div class="payslip-header">
+                        <h2 id="prevCompany" style="color: #1e293b; margin: 0;">Company Name</h2>
+                        <p class="subtitle" style="color: #64748b; margin-top: 5px;">Payslip for the month of <span
+                                id="prevMonth">...</span></p>
+                    </div>
+                    <div class="payslip-body" style="margin-top: 2rem;">
+                        <table class="salary-table"
+                            style="width: 100%; border-collapse: collapse; margin-bottom: 2rem; color: #1e293b;">
+                            <thead>
+                                <tr style="background: #f8fafc; text-align: left; border-bottom: 2px solid #e2e8f0;">
+                                    <th style="padding: 12px;">Earnings</th>
+                                    <th class="amount-col" style="padding: 12px; text-align: right;">Amount</th>
+                                    <th style="padding: 12px;">Deductions</th>
+                                    <th class="amount-col" style="padding: 12px; text-align: right;">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 10px;">Basic Salary</td>
+                                    <td class="amount-col" id="prevBasic" style="padding: 10px; text-align: right;">0.00
+                                    </td>
+                                    <td style="padding: 10px;">Provident Fund</td>
+                                    <td class="amount-col" id="prevPF" style="padding: 10px; text-align: right;">0.00
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 10px;">HRA</td>
+                                    <td class="amount-col" id="prevHRA" style="padding: 10px; text-align: right;">0.00
+                                    </td>
+                                    <td style="padding: 10px;">Professional Tax</td>
+                                    <td class="amount-col" id="prevTax" style="padding: 10px; text-align: right;">0.00
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 10px;">Conveyance</td>
+                                    <td class="amount-col" id="prevConveyance"
+                                        style="padding: 10px; text-align: right;">0.00</td>
+                                    <td style="padding: 10px;">Medical Allowance</td>
+                                    <td class="amount-col" id="prevMedical" style="padding: 10px; text-align: right;">
+                                        0.00</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 10px;">Special Allowance</td>
+                                    <td class="amount-col" id="prevSpecial" style="padding: 10px; text-align: right;">
+                                        0.00</td>
+                                    <td style="padding: 10px;">Special Bonus</td>
+                                    <td class="amount-col" id="prevBonus" style="padding: 10px; text-align: right;">0.00
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e2e8f0;">
+                                    <td style="padding: 10px;">Dearness Allowance</td>
+                                    <td class="amount-col" id="prevDA" style="padding: 10px; text-align: right;">0.00
+                                    </td>
+                                    <td style="padding: 10px;">Variable Allowance</td>
+                                    <td class="amount-col" id="prevVariable" style="padding: 10px; text-align: right;">
+                                        0.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="summary-section"
+                            style="background: #f8fafc; padding: 1rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0;">
+                            <div>
+                                <span style="display: block; font-size: 0.9rem; color: #64748b;">Total Gross
+                                    Earnings</span>
+                                <span id="prevGross"
+                                    style="font-weight: 700; font-size: 1.1rem; color: #1e293b;">0.00</span>
+                            </div>
+                            <div>
+                                <span style="display: block; font-size: 0.9rem; color: #64748b;">Total Deductions</span>
+                                <span id="prevDeductions"
+                                    style="font-weight: 700; font-size: 1.1rem; color: #ef4444;">0.00</span>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="display: block; font-size: 0.9rem; color: #64748b;">Net Payable</span>
+                                <span id="prevNet"
+                                    style="font-weight: 800; font-size: 1.5rem; color: #22c55e;">0.00</span>
+                            </div>
+                        </div>
+                        <div class="signature-section"
+                            style="display: flex; justify-content: space-between; margin-top: 4rem;">
+                            <div class="sig-box"
+                                style="border-top: 1px solid #000; width: 200px; text-align: center; padding-top: 0.5rem; font-size: 0.9rem;">
+                                Employee Signature
+                            </div>
+                            <div class="sig-box"
+                                style="border-top: 1px solid #000; width: 200px; text-align: center; padding-top: 0.5rem; font-size: 0.9rem;">
+                                Authorized Representative
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- SUCCESS MODAL -->
+    <div id="successModal" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 400px; text-align: center; padding: 3rem 2rem;">
+            <div class="success-icon"
+                style="width: 80px; height: 80px; background: rgba(34, 197, 94, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: #22c55e; font-size: 2.5rem;">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <h2 id="successTitle">Success!</h2>
+            <p id="successMsg">Operation completed successfully.</p>
+            <button id="successOkBtn" class="btn-primary" style="width: 100%;">Continue</button>
+        </div>
+    </div>
+
+    <!-- PAYROLL IMPORT MODAL -->
+    <div id="payrollImportModal" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 500px; padding: 2rem;">
+            <div class="modal-header">
+                <h2>Import Bulk Special Bonus</h2>
+                <button id="closePayrollImportModal" class="close-modal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div style="padding: 1.5rem 0;">
+                <p style="color: var(--text-dim); margin-bottom: 1.5rem;">Upload a CSV file with "ID", "Special Bonus
+                    Count", and "Days Payable". Salary is calculated as (Base Net / 26) * Days Payable + (Bonus Count *
+                    Package Bonus).</p>
+
+                <div class="upload-item" style="margin-bottom: 1.5rem;">
+                    <input type="file" id="csvPayrollFileInput" accept=".csv">
+                    <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 0.5rem;">
+                        <i class="fa-solid fa-circle-info"></i> Col 1: ID, Col 2: Name, Col 3: Designation, Col 4: Bonus
+                        Count, Col 5: Days Payable
+                    </p>
+                </div>
+
+                <a href="#" id="downloadPayrollTemplateBtn"
+                    style="color: var(--primary-color); text-decoration: none; font-size: 0.9rem; font-weight: 500;">
+                    <i class="fa-solid fa-download"></i> Download CSV Template
+                </a>
+            </div>
+            <div class="modal-actions">
+                <button id="cancelPayrollImportBtn" class="btn-secondary">Cancel</button>
+                <button id="confirmPayrollImportAddBtn" class="btn-primary" style="background: var(--secondary-color);">
+                    <i class="fa-solid fa-plus"></i> Add to Existing
+                </button>
+                <button id="confirmPayrollImportOverwriteBtn" class="btn-primary">
+                    <i class="fa-solid fa-rotate"></i> Overwrite All
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONFIRM MODAL -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 400px; text-align: center; padding: 3rem 2rem;">
+            <div class="confirm-icon"
+                style="width: 80px; height: 80px; background: rgba(239, 68, 68, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: #ef4444; font-size: 2.5rem;">
+                <i class="fa-solid fa-circle-question"></i>
+            </div>
+            <h2 id="confirmTitle">Confirm Action</h2>
+            <p id="confirmMsg">Are you sure you want to proceed?</p>
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button id="confirmCancelBtn" class="btn-secondary" style="flex: 1;">Cancel</button>
+                <button id="confirmOkBtn" class="btn-primary"
+                    style="flex: 1; background: #ef4444; border-color: #ef4444;">Proceed</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/render-logic.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Gravity HR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --id-card-bg: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        }
+
+        .profile-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 2.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        /* --- VIRTUAL ID CARD --- */
+        .virtual-id-wrapper {
+            perspective: 1000px;
+            width: 320px;
+            margin-bottom: 2rem;
+        }
+
+        .id-card {
+            width: 100%;
+            height: 480px;
+            background: var(--id-card-bg);
+            border-radius: 20px;
+            padding: 2rem;
+            position: relative;
+            color: white;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background-image:
+                radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(0, 0, 0, 0.2) 0%, transparent 40%);
+        }
+
+        .id-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+            opacity: 0.05;
+            pointer-events: none;
+        }
+
+        .id-card-chip {
+            width: 50px;
+            height: 40px;
+            background: linear-gradient(45deg, #ffd700, #b8860b);
+            border-radius: 6px;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .id-avatar {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 4px solid white;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            margin-bottom: 1.5rem;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            color: #6366f1;
+            overflow: hidden;
+        }
+
+        .id-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .id-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.2rem;
+        }
+
+        .id-role {
+            font-size: 1rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .id-qr {
+            margin-top: auto;
+            width: 80px;
+            height: 80px;
+            background: white;
+            padding: 5px;
+            border-radius: 8px;
+        }
+
+        /* --- HIERARCHY --- */
+        .hierarchy-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .hierarchy-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 1.25rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .hierarchy-item .avatar-sm {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .hierarchy-info h4 {
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .hierarchy-info span {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        /* --- SKILLS --- */
+        .skills-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-top: 1rem;
+        }
+
+        .skill-tag {
+            background: rgba(99, 102, 241, 0.1);
+            color: #818cf8;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        /* --- STATUS BADGES --- */
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+        }
+
+        .status-probation {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+
+        .back-nav {
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @media (max-width: 900px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .virtual-id-wrapper {
+                margin: 0 auto 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="dark-theme" data-page="user">
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="profile-container">
+        <div class="back-nav">
+            <button onclick="goBack()" class="btn-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+            </button>
+            <button onclick="logout()" class="btn-icon btn-logout" title="Logout">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
+
+        <div class="info-grid">
+            <!-- LEFT COLUMN: Details -->
+            <div class="details-column">
+                <div class="glass-panel profile-header" style="padding: 2rem;">
+                    <div class="header-content">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                                <div id="headerAvatar" class="avatar-lg"
+                                    style="width: 80px; height: 80px; border-radius: 50%; background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; overflow: hidden; color: white; font-size: 2rem; border: 3px solid rgba(255,255,255,0.1);">
+                                    <i class="fa-solid fa-user"></i>
+                                </div>
+                                <div>
+                                    <h1 id="userName" style="margin: 0;">User Name</h1>
+                                    <p id="userRole" style="font-size: 1.1rem; margin: 0; opacity: 0.8;">Designation</p>
+                                    <div style="margin-top: 5px;">
+                                        <span class="badge active" id="userIdBadge"
+                                            style="background: rgba(99, 102, 241, 0.2); color: #818cf8;">ID: 0000</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <span id="statusBadge" class="status-badge status-active">Active</span>
+                        </div>
+                        <div class="skills-container" id="skillTags" style="margin-top: 1.5rem;">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reporting Hierarchy -->
+                <h3
+                    style="margin: 2rem 0 1rem; color: var(--text-dim); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+                    Reporting Structure</h3>
+                <div class="hierarchy-grid">
+                    <div class="hierarchy-item">
+                        <div class="avatar-sm" id="mgrAvatar"><i class="fa-solid fa-user-tie"></i></div>
+                        <div class="hierarchy-info">
+                            <h4 id="mgrName">Not Assigned</h4>
+                            <span>Direct Manager</span>
+                        </div>
+                    </div>
+                    <div class="hierarchy-item">
+                        <div class="avatar-sm" id="tlAvatar"><i class="fa-solid fa-user-gear"></i></div>
+                        <div class="hierarchy-info">
+                            <h4 id="tlName">Not Assigned</h4>
+                            <span>Team Leader</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personal & Work Details -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2rem;">
+                    <div class="glass-panel info-card" style="padding: 1.5rem;">
+                        <h3><i class="fa-solid fa-address-card"></i> Personal Details</h3>
+                        <div class="detail-item">
+                            <span class="detail-label">Mobile</span>
+                            <span class="detail-value" id="valMobile">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Email</span>
+                            <span class="detail-value" id="valEmail">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Blood Group</span>
+                            <span class="detail-value" id="valBlood" style="color: #ef4444; font-weight: 700;">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Emergency Contact</span>
+                            <span class="detail-value" id="valEmergency">+91 98765 43210</span>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel info-card" style="padding: 1.5rem;">
+                        <h3><i class="fa-solid fa-briefcase"></i> Work Information</h3>
+                        <div class="detail-item">
+                            <span class="detail-label">Joining Date</span>
+                            <span class="detail-value" id="valDoj">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Company Tenure</span>
+                            <span class="detail-value" id="valTenure"
+                                style="color: var(--primary-color);">Calculating...</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Work Mode</span>
+                            <span class="detail-value">Hybrid - HQ</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Education</span>
+                            <span class="detail-value" id="valEdu">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Salary Info -->
+                <div class="glass-panel info-card" style="margin-top: 1.5rem; padding: 1.5rem;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+                        <h3><i class="fa-solid fa-money-check-dollar"></i> Financial Summary</h3>
+                        <button class="btn-primary btn-sm" onclick="downloadLatestPayslip()">
+                            <i class="fa-solid fa-download"></i> Download Latest Slip
+                        </button>
+                    </div>
+                    <div class="input-grid-3">
+                        <div class="detail-item" style="flex-direction: column; align-items: flex-start;">
+                            <span class="detail-label">Basic Salary</span>
+                            <span class="detail-value" id="salBasic">$0.00</span>
+                        </div>
+                        <div class="detail-item" style="flex-direction: column; align-items: flex-start;">
+                            <span class="detail-label">Bonuses</span>
+                            <span class="detail-value" id="salBonus">$0.00</span>
+                        </div>
+                        <div class="detail-item"
+                            style="flex-direction: column; align-items: flex-start; background: rgba(16, 185, 129, 0.05); border-radius: 8px; padding: 10px;">
+                            <span class="detail-label" style="color: #10b981;">Monthly Net Pay</span>
+                            <span class="detail-value" id="salNet"
+                                style="font-size: 1.2rem; color: #10b981;">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: ID Card & Leave -->
+            <div class="widgets-column">
+                <div class="virtual-id-wrapper">
+                    <div class="id-card">
+                        <div class="id-card-chip"></div>
+                        <div class="id-avatar" id="idAvatar">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <div class="id-name" id="idName">Name</div>
+                        <div class="id-role" id="idRole">Role</div>
+                        <div style="margin-top: 1rem; font-size: 0.8rem; opacity: 0.7;">GRAVITY TECH CORP</div>
+                        <div class="id-qr">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=EMP-0000" id="idQr"
+                                alt="QR" style="width: 100%; height: 100%;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leave Balance -->
+                <div class="glass-panel info-card" style="padding: 1.5rem;">
+                    <h3><i class="fa-solid fa-calendar-day"></i> Leave Quota</h3>
+                    <div class="leave-badges">
+                        <div class="leave-badge">
+                            <span class="leave-count" id="countPaid">0</span>
+                            <span class="leave-type">Paid</span>
+                        </div>
+                        <div class="leave-badge">
+                            <span class="leave-count" id="countSick">0</span>
+                            <span class="leave-type">Sick</span>
+                        </div>
+                        <div class="leave-badge" style="background: rgba(16, 185, 129, 0.1);">
+                            <span class="leave-count" id="countTotal" style="color: #10b981;">0</span>
+                            <span class="leave-type">Available</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Printable Area for Pay Slip -->
+    <div id="printableArea" style="display: none;"></div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial Load
+            loadData();
+            // Ensure state is loaded
+            if (typeof loadData === 'function' && (!STATE.employees || STATE.employees.length === 0)) {
+                loadData();
+            }
+
+            const user = window.getCurrentUserData ? getCurrentUserData() : null;
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // --- 0. LOAD STATE FOR HIERARCHY ---
+            const stateData = JSON.parse(localStorage.getItem('gravity_hrm_state') || '{}');
+            const allEmployees = stateData.employees || [];
+
+            // --- 1. FILL HEADER & STATUS ---
+            document.getElementById('userName').innerText = user.name;
+            document.getElementById('userRole').innerText = user.role;
+            document.getElementById('userIdBadge').innerText = `ID: ${user.id}`;
+
+            // Probation Logic (6 months threshold)
+            const doj = new Date(user.doj || '2024-01-01');
+            const now = new Date();
+            const diffTime = Math.abs(now - doj);
+            const diffMonths = diffTime / (1000 * 60 * 60 * 24 * 30.44);
+            const statusBadge = document.getElementById('statusBadge');
+
+            if (diffMonths < 6) {
+                statusBadge.innerText = 'On Probation';
+                statusBadge.className = 'status-badge status-probation';
+            } else {
+                statusBadge.innerText = 'Active';
+                statusBadge.className = 'status-badge status-active';
+            }
+
+            // Tenure Calculation
+            const years = Math.floor(diffMonths / 12);
+            const months = Math.floor(diffMonths % 12);
+            const tenureStr = `${years > 0 ? years + 'y ' : ''}${months}m`;
+            document.getElementById('valTenure').innerText = tenureStr || '0m';
+
+            // --- 2. FILL VIRTUAL ID CARD & HEADER AVATAR ---
+            document.getElementById('idName').innerText = user.name;
+            document.getElementById('idRole').innerText = user.role;
+            document.getElementById('idQr').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${user.id}`;
+            if (user.image) {
+                const imgHtml = `<img src="${user.image}" alt="${user.name}" style="width: 100%; height: 100%; object-fit: cover; object-position: center; border-radius: 50%;">`;
+                document.getElementById('idAvatar').innerHTML = imgHtml;
+                document.getElementById('headerAvatar').innerHTML = imgHtml;
+            }
+
+            // --- 3. SKILL TAGS (Based on Role) ---
+            const skillMap = {
+                'Admin': ['Leadership', 'Strategic Planning', 'Operations'],
+                'Manager': ['Team Management', 'Agile', 'Budgeting'],
+                'Team Leader': ['Mentorship', 'Kanban', 'Coordination'],
+                'Employee': ['Development', 'Problem Solving', 'Collaboration'],
+                'HR': ['Recruitment', 'Conflict Resolution', 'Compliance'],
+                'IT Team': ['Systems', 'Networking', 'Cybersecurity']
+            };
+            const skills = skillMap[user.role] || ['Professional', 'Determined'];
+            const skillTags = document.getElementById('skillTags');
+            skillTags.innerHTML = '';
+            skills.forEach(s => {
+                const tag = document.createElement('span');
+                tag.className = 'skill-tag';
+                tag.innerText = s;
+                skillTags.appendChild(tag);
+            });
+
+            // --- 4. REPORTING HIERARCHY ---
+            const mgr = allEmployees.find(e => e.id === user.managerId);
+            const tl = allEmployees.find(e => e.id === user.teamLeaderId);
+
+            if (mgr) {
+                document.getElementById('mgrName').innerText = mgr.name;
+                if (mgr.image) document.getElementById('mgrAvatar').innerHTML = `<img src="${mgr.image}" style="width: 100%; height: 100%; object-fit: cover; object-position: center; border-radius: 50%;">`;
+            }
+            if (tl) {
+                document.getElementById('tlName').innerText = tl.name;
+                if (tl.image) document.getElementById('tlAvatar').innerHTML = `<img src="${tl.image}" style="width: 100%; height: 100%; object-fit: cover; object-position: center; border-radius: 50%;">`;
+            }
+
+            // --- 5. PERSONAL DETAILS ---
+            document.getElementById('valDoj').innerText = user.doj || 'N/A';
+            document.getElementById('valEdu').innerText = user.edu || 'N/A';
+            document.getElementById('valMobile').innerText = user.mobile || 'N/A';
+            document.getElementById('valEmail').innerText = user.email || 'N/A';
+            document.getElementById('valBlood').innerText = user.bloodGroup || 'O+';
+
+            // --- 6. LEAVE QUOTA ---
+            // Logic: 1.25 Paid per month, 1 Sick per 3 months
+            const earnedPaid = diffMonths * 1.25;
+            const earnedSick = Math.floor(diffMonths / 3);
+            const approvedLeaves = (stateData.leaves || []).filter(l => l.empId === user.id && l.status === 'Approved');
+            const taken = approvedLeaves.reduce((sum, l) => sum + l.days, 0);
+            const totalRemaining = (earnedPaid + earnedSick) - taken;
+
+            document.getElementById('countPaid').innerText = earnedPaid.toFixed(1);
+            document.getElementById('countSick').innerText = earnedSick;
+            document.getElementById('countTotal').innerText = totalRemaining.toFixed(1);
+
+            // --- 7. SALARY SUMMARY ---
+            if (user.packageData) {
+                const p = user.packageData;
+                const earnings = (p.basic || 0) + (p.hra || 0) + (p.conveyance || 0) + (p.medical || 0) + (p.special || 0) + (p.bonus || 0);
+                const ded = (p.pf || 0) + (p.tax || 0);
+                const net = earnings - ded;
+
+                document.getElementById('salBasic').innerText = formatCurrency(p.basic || 0);
+                document.getElementById('salBonus').innerText = formatCurrency((p.special || 0) + (p.bonus || 0));
+                document.getElementById('salNet').innerText = formatCurrency(net);
+            }
+        });
+
+        function goBack() {
+            const role = localStorage.getItem('currentRole');
+            if (role === 'Admin' || role === 'Manager' || role === 'HR') {
+                window.location.href = 'dashboard.html';
+            } else {
+                window.location.href = 'traffic-counter.html';
+            }
+        }
+
+        function downloadLatestPayslip() {
+            const user = getCurrentUserData();
+            if (!user || !user.packageData) {
+                alert("Salary package not assigned. Please contact HR.");
+                return;
+            }
+
+            const p = user.packageData;
+            const earnings = (p.basic || 0) + (p.hra || 0) + (p.conveyance || 0) + (p.medical || 0) + (p.special || 0) + (p.bonus || 0) + (p.da || 0) + (p.variable || 0);
+            const deductions = (p.pf || 0) + (p.tax || 0);
+            const net = earnings - deductions;
+
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const now = new Date();
+            const currentMonth = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+
+            const payslipHtml = `
+                <div class="glass-panel preview-container" style="background: white; color: #1e293b; padding: 2rem; border-radius: 0;">
+                    <div class="payslip-header">
+                        <h2>Gravity Tech</h2>
+                        <p class="subtitle">Payslip for the month of <span>${currentMonth}</span></p>
+                    </div>
+
+                    <div class="payslip-body">
+                        <div class="employee-info-grid">
+                            <div class="info-item">
+                                <span class="label">Name:</span>
+                                <span class="value">${user.name}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Emp ID:</span>
+                                <span class="value">${user.id}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Designation:</span>
+                                <span class="value">${user.role}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Date:</span>
+                                <span class="value">${now.toLocaleDateString()}</span>
+                            </div>
+                        </div>
+
+                        <table class="salary-table">
+                            <thead>
+                                <tr>
+                                    <th>Earnings</th>
+                                    <th class="amount-col">Amount</th>
+                                    <th>Deductions</th>
+                                    <th class="amount-col">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Basic Salary</td>
+                                    <td class="amount-col">${formatCurrency(p.basic || 0)}</td>
+                                    <td>Provident Fund</td>
+                                    <td class="amount-col">${formatCurrency(p.pf || 0)}</td>
+                                </tr>
+                                <tr>
+                                    <td>HRA</td>
+                                    <td class="amount-col">${formatCurrency(p.hra || 0)}</td>
+                                    <td>Professional Tax</td>
+                                    <td class="amount-col">${formatCurrency(p.tax || 0)}</td>
+                                </tr>
+                                <tr>
+                                    <td>Conveyance</td>
+                                    <td class="amount-col">${formatCurrency(p.conveyance || 0)}</td>
+                                    <td>-</td>
+                                    <td class="amount-col">0.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Medical Allowance</td>
+                                    <td class="amount-col">${formatCurrency(p.medical || 0)}</td>
+                                    <td>-</td>
+                                    <td class="amount-col">0.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Bonus/Special</td>
+                                    <td class="amount-col">${formatCurrency((p.special || 0) + (p.bonus || 0))}</td>
+                                    <td>-</td>
+                                    <td class="amount-col">0.00</td>
+                                </tr>
+                                <tr class="total-row">
+                                    <td><strong>Total Earnings</strong></td>
+                                    <td class="amount-col"><strong>${formatCurrency(earnings)}</strong></td>
+                                    <td><strong>Total Deductions</strong></td>
+                                    <td class="amount-col"><strong>${formatCurrency(deductions)}</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="net-pay-section">
+                            <span class="net-label">Net Pay:</span>
+                            <span class="net-amount">${formatCurrency(net)}</span>
+                        </div>
+
+                        <div class="signature-section">
+                            <div class="sig-box"><p>Employer Signature</p></div>
+                            <div class="sig-box"><p>Employee Signature</p></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const printArea = document.getElementById('printableArea');
+            printArea.innerHTML = payslipHtml;
+            printArea.style.display = 'block';
+
+            // Set custom title for PDF filename: Emp ID_Name_Month_Year
+            const originalTitle = document.title;
+            const pdfName = `${user.id}_${user.name.replace(/\s+/g, '_')}_${monthNames[now.getMonth()]}_${now.getFullYear()}`;
+            document.title = pdfName;
+
+            window.print();
+
+            // Restore original title
+            document.title = originalTitle;
+            printArea.style.display = 'none';
+        }
+
+    </script>
+
+    <!-- SUCCESS MODAL -->
+    <div id="successModal" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 400px; text-align: center; padding: 3rem 2rem;">
+            <div class="success-icon"
+                style="width: 80px; height: 80px; background: rgba(34, 197, 94, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: #22c55e; font-size: 2.5rem;">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <h2 id="successTitle">Success!</h2>
+            <p id="successMsg">Operation completed successfully.</p>
+            <button id="successOkBtn" class="btn-primary" style="width: 100%;">Continue</button>
+        </div>
+    </div>
+
+    <!-- CONFIRM MODAL -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 400px; text-align: center; padding: 3rem 2rem;">
+            <div class="confirm-icon"
+                style="width: 80px; height: 80px; background: rgba(239, 68, 68, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: #ef4444; font-size: 2.5rem;">
+                <i class="fa-solid fa-circle-question"></i>
+            </div>
+            <h2 id="confirmTitle">Confirm Action</h2>
+            <p id="confirmMsg">Are you sure you want to proceed?</p>
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button id="confirmCancelBtn" class="btn-secondary" style="flex: 1;">Cancel</button>
+                <button id="confirmOkBtn" class="btn-primary"
+                    style="flex: 1; background: #ef4444; border-color: #ef4444;">Proceed</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>

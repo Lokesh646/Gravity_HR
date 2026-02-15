@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports - Gravity HR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/dashboard-common.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .reports-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .report-card {
+      padding: 1.5rem;
+      min-height: 400px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .kpi-card {
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+    }
+
+    .kpi-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .kpi-info h3 {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0 0 0.3rem 0;
+    }
+
+    .kpi-info p {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 0;
+      color: var(--text-main);
+    }
+
+    .chart-container {
+      flex: 1;
+      position: relative;
+      min-height: 300px;
+    }
+
+    .section-tab-container {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+    }
+
+    .report-tab {
+      padding: 0.7rem 1.5rem;
+      border-radius: 10px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      border: 1px solid var(--glass-border);
+      color: var(--text-dim);
+    }
+
+    .report-tab.active {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+
+    .data-table-compact {
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+
+<body data-page="reports">
+  <div class="background-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <div class="app-layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar glass-panel">
+      <div class="brand">
+        <i class="fa-solid fa-layer-group"></i>
+        <span>Gravity HR</span>
+      </div>
+      <nav class="nav-links">
+        <!-- Links injected by render-logic.js -->
+      </nav>
+      <div style="margin-top: auto; padding: 1rem 1.5rem;">
+        <button id="themeToggle" class="btn-secondary btn-sm"
+          style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--input-bg);">
+          <i class="fa-solid fa-moon"></i>
+          <span>Dark Mode</span>
+        </button>
+        <button onclick="logout()" class="btn-secondary btn-sm"
+          style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--input-bg); margin-top: 10px; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+      <a href="user.html" class="user-profile" style="text-decoration: none; color: inherit;">
+        <div class="avatar">
+          <i class="fa-solid fa-user"></i>
+        </div>
+        <div class="user-info">
+          <span class="name" id="sidebarUserName">Admin User</span>
+          <span class="role" id="sidebarUserRole">Manager</span>
+        </div>
+      </a>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <header class="section-header">
+        <div>
+          <h1>Corporate Insights</h1>
+          <p>Strategic analysis & operational performance</p>
+        </div>
+        <div style="display: flex; gap: 1rem;">
+          <a href="dashboard.html" class="btn-secondary btn-sm" style="text-decoration: none;">
+            <i class="fa-solid fa-house"></i> Home
+          </a>
+          <button class="btn-primary btn-sm" onclick="window.print()">
+            <i class="fa-solid fa-print"></i> PDF Report
+          </button>
+        </div>
+      </header>
+
+      <!-- KPI SUMMARY -->
+      <div class="kpi-grid">
+        <div class="kpi-card glass-panel" style="border-left: 4px solid var(--primary-color);">
+          <div class="kpi-icon" style="background: rgba(99, 102, 241, 0.1); color: var(--primary-color);">
+            <i class="fa-solid fa-users"></i>
+          </div>
+          <div class="kpi-info">
+            <h3>Employee Strength</h3>
+            <p id="kpiTotalEmps">0</p>
+          </div>
+        </div>
+        <div class="kpi-card glass-panel" style="border-left: 4px solid #10b981;">
+          <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+            <i class="fa-solid fa-indian-rupee-sign"></i>
+          </div>
+          <div class="kpi-info">
+            <h3>Monthly Liability</h3>
+            <p id="kpiTotalPayroll">₹ 0.00</p>
+          </div>
+        </div>
+        <div class="kpi-card glass-panel" style="border-left: 4px solid #f59e0b;">
+          <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+            <i class="fa-solid fa-clock"></i>
+          </div>
+          <div class="kpi-info">
+            <h3>Avg. Work Day</h3>
+            <p id="kpiAvgHours">0.0h</p>
+          </div>
+        </div>
+        <div class="kpi-card glass-panel" style="border-left: 4px solid #ec4899;">
+          <div class="kpi-icon" style="background: rgba(236, 72, 153, 0.1); color: #ec4899;">
+            <i class="fa-solid fa-boxes-stacked"></i>
+          </div>
+          <div class="kpi-info">
+            <h3>Active Packages</h3>
+            <p id="kpiTotalPkgs">0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <div class="section-tab-container">
+        <div class="report-tab active" onclick="switchReportTab('analytics')">Visual Analytics</div>
+        <div class="report-tab" onclick="switchReportTab('finance')">Financial Matrix</div>
+        <div class="report-tab" onclick="switchReportTab('attendance')">Attendance Audit</div>
+        <div class="report-tab" onclick="switchReportTab('traffic')">Traffic Intelligence</div>
+      </div>
+
+      <!-- ANALYTICS TAB -->
+      <div id="tabAnalytics" class="report-section">
+        <div class="reports-grid">
+          <div class="report-card glass-panel">
+            <h3 style="margin-bottom: 2rem;">Workforce Distribution</h3>
+            <div class="chart-container">
+              <canvas id="roleChart"></canvas>
+            </div>
+          </div>
+          <div class="report-card glass-panel">
+            <h3 style="margin-bottom: 2rem;">Salary Allocation by Role</h3>
+            <div class="chart-container">
+              <canvas id="financeChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FINANCE TAB -->
+      <div id="tabFinance" class="report-section" style="display: none;">
+        <div class="glass-panel" style="padding: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0;">Departmental Financials</h3>
+            <button class="btn-secondary btn-sm" onclick="exportRoleFinance()">
+              <i class="fa-solid fa-download"></i> Export Matrix
+            </button>
+          </div>
+          <div class="table-container">
+            <table class="data-table data-table-compact">
+              <thead>
+                <tr>
+                  <th>Role</th>
+                  <th>Staff Count</th>
+                  <th>Avg. Basic</th>
+                  <th>Total HRA</th>
+                  <th>Total Deductions</th>
+                  <th style="color: var(--primary-color);">Net Monthly Payout</th>
+                </tr>
+              </thead>
+              <tbody id="roleFinanceBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ATTENDANCE TAB -->
+      <div id="tabAttendance" class="report-section" style="display: none;">
+        <div class="glass-panel" style="padding: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0;">Operational Logs</h3>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="date" id="reportDateFilter" class="glass-input" style="padding: 0.4rem;">
+              <button class="btn-primary btn-sm" onclick="renderAttendanceAudit()">Filter</button>
+              <button class="btn-secondary btn-sm" onclick="exportAuditLogs()">
+                <i class="fa-solid fa-download"></i> Export Logs
+              </button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Date</th>
+                  <th>Login</th>
+                  <th>Logout</th>
+                  <th>Duration</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="auditLogBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRAFFIC INTELLIGENCE TAB -->
+      <div id="tabTraffic" class="report-section" style="display: none;">
+        <div class="glass-panel" style="padding: 1.5rem; margin-bottom: 2rem;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+            <h3 style="margin: 0;">Monthly Traffic Trends</h3>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <label for="trafficMonthFilter" style="font-size: 0.85rem; color: var(--text-dim);">Select Month:</label>
+              <input type="month" id="trafficMonthFilter" class="glass-input" style="padding: 0.4rem;">
+              <button class="btn-primary btn-sm" onclick="handleTrafficFilter()">View Trends</button>
+            </div>
+          </div>
+          <div style="height: 350px; width: 100%; position: relative;">
+            <canvas id="monthlyTrafficChart"></canvas>
+          </div>
+        </div>
+
+
+      </div>
+    </main>
+  </div>
+
+  <!-- MODALS (Hidden but standard) -->
+  <div class="modal" id="employeeModal" style="display: none;"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/render-logic.js"></script>
+  <script src="script.js"></script>
+  <script>
+    // Tab system
+    function switchReportTab(tab) {
+      document.querySelectorAll('.report-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.report-section').forEach(s => s.style.display = 'none');
+
+      const btn = document.querySelector(`.report-tab[onclick*="${tab}"]`);
+      if (btn) btn.classList.add('active');
+
+      const section = document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+      if (section) section.style.display = 'block';
+
+      // Special re-renders or chart updates if needed
+      if (tab === 'traffic') {
+        const monthInput = document.getElementById('trafficMonthFilter');
+        if (monthInput && !monthInput.value) {
+          monthInput.value = new Date().toISOString().slice(0, 7);
+        }
+        if (window.renderTrafficIntelligence) {
+          window.renderTrafficIntelligence(monthInput.value);
+        }
+      }
+    }
+
+    function handleTrafficFilter() {
+      const monthStr = document.getElementById('trafficMonthFilter').value;
+      if (window.renderTrafficIntelligence) {
+        window.renderTrafficIntelligence(monthStr);
+      }
+    }
+
+    // Wait for script.js to load fully and then initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      // Set default month
+      const trafficMonthInput = document.getElementById('trafficMonthFilter');
+      if (trafficMonthInput) trafficMonthInput.value = new Date().toISOString().slice(0, 7);
+
+      // Give script.js time to load data
+      setTimeout(() => {
+        if (typeof renderCorporateReports === 'function') {
+          renderCorporateReports();
+        }
+
+        // Render legacy reports if elements exist
+        if (typeof renderReport1 === 'function' && document.querySelector(".container1 tbody")) {
+          renderReport1();
+        }
+        if (typeof renderReport2 === 'function' && document.querySelector(".container2")) {
+          renderReport2();
+        }
+      }, 300);
+    });
+
+    // Legacy render support
+    function renderReport1() {
+      const employees = (typeof STATE !== 'undefined' && STATE.employees) || [];
+      const tbody = document.querySelector(".container1 tbody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+
+      employees.forEach((emp, index) => {
+        tbody.innerHTML += `
+            <tr>
+              <td>${index + 1}</td>
+              <td>${emp.name}</td>
+              <td>${emp.id}</td>
+              <td>${emp.role}</td>
+            </tr>
+          `;
+      });
+    }
+
+    function renderReport2() {
+      const data = JSON.parse(localStorage.getItem('loginReports') || '[]');
+      const container = document.querySelector(".container2");
+      if (!container) return;
+      container.innerHTML = "<h2>Employee Login/Logout Report</h2>";
+
+      const formatTime = (dateStr) => {
+        if (!dateStr) return "-";
+        const d = new Date(dateStr);
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+      };
+
+      const formatDuration = (start, end) => {
+        if (!start || !end) return "-";
+        const diff = new Date(end) - new Date(start);
+        if (isNaN(diff) || diff < 0) return "-";
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      };
+
+      const groupByDay = {};
+      data.forEach((emp) => {
+        const d = new Date(emp.login);
+        const key = `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getFullYear()}`;
+        if (!groupByDay[key]) groupByDay[key] = [];
+        groupByDay[key].push(emp);
+      });
+
+      Object.entries(groupByDay).forEach(([date, logs]) => {
+        const table = document.createElement("table");
+        const tbody = document.createElement("tbody");
+        let csvData = [["Sl. No", "Name", "Employee ID", "Role", "Login Time", "Logout Time", "Duration"]];
+
+        logs.forEach((emp, index) => {
+          const login = formatTime(emp.login);
+          const logout = formatTime(emp.logout);
+          const duration = formatDuration(emp.login, emp.logout);
+          const row = document.createElement("tr");
+
+          row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${emp.name}</td>
+          <td>${emp.id}</td>
+          <td>${emp.role}</td>
+          <td>${login}</td>
+          <td>${logout}</td>
+          <td>${duration}</td>
+        `;
+
+          tbody.appendChild(row);
+          csvData.push([index + 1, emp.name, emp.id, emp.role, login, logout, duration]);
+        });
+
+        table.innerHTML = `
+        <thead>
+          <tr>
+            <th>Sl. No</th>
+            <th>Name</th>
+            <th>Employee ID</th>
+            <th>Role</th>
+            <th>Login Time</th>
+            <th>Logout Time</th>
+            <th>Duration</th>
+          </tr>
+        </thead>
+      `;
+        table.appendChild(tbody);
+
+        const section = document.createElement("div");
+        section.innerHTML = `<h3>${date}</h3>`;
+        const btn = document.createElement("button");
+        btn.className = "export-btn";
+        btn.textContent = `Export CSV - ${date}`;
+        btn.onclick = () => {
+          let csv = csvData.map(row => row.join(",")).join("\n");
+          const blob = new Blob([csv], { type: "text/csv" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `LoginReport_${date.replace(/-/g, '')}.csv`;
+          a.click();
+        };
+
+        section.appendChild(btn);
+        section.appendChild(table);
+        container.appendChild(section);
+      });
+    }
+  </script>
+</body>
+
+</html>

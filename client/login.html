@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Login - Gravity HR</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      display: flex;
+      min-height: 100vh;
+      background: url("login backgeound.jpg") no-repeat center center fixed;
+      background-size: cover;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 400px;
+      padding: 40px;
+      text-align: center;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    .logo-img {
+      width: 80px;
+      margin-bottom: 16px;
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2));
+    }
+
+    .avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 3px solid rgba(255, 255, 255, 0.2);
+      margin: 20px auto;
+      object-fit: cover;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    h2 {
+      margin-bottom: 24px;
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .footer-note {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 24px;
+    }
+
+    /* Fix for dropdown visibility */
+    select option {
+      background-color: #1e293b;
+      /* Dark background for options */
+      color: #fff;
+      /* White text */
+    }
+  </style>
+</head>
+
+<body data-page="login">
+
+  <div class="glass-panel login-container">
+    <img src="logo.png" class="logo-img" alt="Gravity HR" />
+    <h1 style="font-size: 1.5rem; margin-bottom: 8px;">Gravity HR</h1>
+
+    <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="avatar" alt="User Avatar" />
+    <h2>Welcome Back</h2>
+
+    <div class="form-group">
+      <input type="text" id="employeeName" placeholder="Employee Name" />
+    </div>
+
+    <div class="form-group">
+      <input type="text" id="employeeId" placeholder="Employee ID" />
+    </div>
+
+    <div class="form-group">
+      <input type="password" id="pin" placeholder="Enter PIN" />
+    </div>
+
+    <div class="form-group">
+      <select id="role">
+        <option value="">Select Role</option>
+        <option value="Admin">Admin</option>
+        <option value="Employee">Employee</option>
+        <option value="Team Leader">Team Leader</option>
+        <option value="Manager">Manager</option>
+        <option value="HR">HR</option>
+        <option value="IT Team">IT Team</option>
+      </select>
+    </div>
+
+    <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="handleLogin()">Sign In</button>
+
+    <div class="footer-note">© 2026 Gravity HR. All rights reserved.</div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script>
+    function handleLogin() {
+      const name = document.getElementById('employeeName').value.trim();
+      const id = document.getElementById('employeeId').value.trim();
+      const role = document.getElementById('role').value;
+
+      if (!name || !role) {
+        alert("Please enter a name and select a role.");
+        return;
+      }
+
+      // Using the new Auth system
+      Auth.login(name, role, id);
+    }
+  </script>
+</body>
+
+</html>

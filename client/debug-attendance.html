@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Debug Tool</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #00f2fe;
+        }
+
+        h2 {
+            color: #a855f7;
+            margin-top: 30px;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .btn {
+            background: #00f2fe;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            background: #00d4e0;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .error {
+            color: #ef4444;
+        }
+
+        .success {
+            color: #10b981;
+        }
+
+        .warning {
+            color: #f59e0b;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+        }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔍 Attendance Debug Tool</h1>
+    <p>This tool helps diagnose why daily reports are not showing in the attendance section.</p>
+
+    <div class="section">
+        <h2>Current User</h2>
+        <div id="currentUserInfo"></div>
+    </div>
+
+    <div class="section">
+        <h2>Login Reports Data</h2>
+        <button class="btn" onclick="loadData()">Refresh Data</button>
+        <button class="btn btn-danger" onclick="clearLoginReports()">Clear All Login Reports</button>
+        <button class="btn" onclick="createTestReport()">Create Test Report for Today</button>
+        <div id="loginReportsInfo"></div>
+    </div>
+
+    <div class="section">
+        <h2>Today's Reports</h2>
+        <div id="todayReports"></div>
+    </div>
+
+    <div class="section">
+        <h2>Actions</h2>
+        <button class="btn" onclick="window.location.href='attendance.html'">Go to Attendance Page</button>
+        <button class="btn" onclick="window.location.href='login.html'">Go to Login</button>
+        <button class="btn" onclick="testLoginLogout()">Simulate Login/Logout</button>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        function loadData() {
+            // Current User
+            const currentUser = Auth.getCurrentUser();
+            const userInfoDiv = document.getElementById('currentUserInfo');
+
+            if (currentUser) {
+                userInfoDiv.innerHTML = `
+                    <p><strong>Name:</strong> ${currentUser.name}</p>
+                    <p><strong>Role:</strong> ${currentUser.role}</p>
+                    <p><strong>ID:</strong> ${currentUser.id}</p>
+                `;
+            } else {
+                userInfoDiv.innerHTML = '<p class="error">No user logged in</p>';
+            }
+
+            // Login Reports
+            const loginReports = JSON.parse(localStorage.getItem('loginReports') || '[]');
+            const reportsDiv = document.getElementById('loginReportsInfo');
+
+            if (loginReports.length === 0) {
+                reportsDiv.innerHTML = `
+                    <div class="info-box error">
+                        <strong>⚠️ No login reports found!</strong>
+                        <p>This is why the attendance page is empty. You need to:</p>
+                        <ol>
+                            <li>Log out completely</li>
+                            <li>Log back in (this will create a new login report)</li>
+                            <li>Then check the attendance page</li>
+                        </ol>
+                        <p>Or click "Create Test Report for Today" to add a test entry.</p>
+                    </div>
+                `;
+            } else {
+                reportsDiv.innerHTML = `
+                    <p class="success"><strong>Total Reports:</strong> ${loginReports.length}</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>ID</th>
+                                <th>Role</th>
+                                <th>Login Time</th>
+                                <th>Logout Time</th>
+                                <th>Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${loginReports.map(r => {
+                    const loginTime = new Date(r.login);
+                    const logoutTime = r.logout ? new Date(r.logout) : null;
+                    let duration = 'Active';
+
+                    if (logoutTime) {
+                        const diff = logoutTime - loginTime;
+                        const hours = Math.floor(diff / 3600000);
+                        const mins = Math.floor((diff % 3600000) / 60000);
+                        duration = `${hours}h ${mins}m`;
+                    }
+
+                    return `
+                                    <tr>
+                                        <td>${r.name}</td>
+                                        <td>${r.id}</td>
+                                        <td>${r.role}</td>
+                                        <td>${loginTime.toLocaleString()}</td>
+                                        <td>${logoutTime ? logoutTime.toLocaleString() : '<span class="success">Still logged in</span>'}</td>
+                                        <td>${duration}</td>
+                                    </tr>
+                                `;
+                }).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            // Today's Reports
+            const today = new Date().toISOString().split('T')[0];
+            const todayReports = loginReports.filter(r => {
+                const reportDate = new Date(r.login).toISOString().split('T')[0];
+                return reportDate === today;
+            });
+
+            const todayDiv = document.getElementById('todayReports');
+            if (todayReports.length === 0) {
+                todayDiv.innerHTML = `
+                    <div class="info-box warning">
+                        <strong>⚠️ No reports for today (${today})</strong>
+                        <p>This is why you don't see anything when you click today's date in the attendance calendar.</p>
+                        <p>Solution: Log out and log back in to create a new report for today.</p>
+                    </div>
+                `;
+            } else {
+                todayDiv.innerHTML = `
+                    <p class="success"><strong>Reports for Today (${today}):</strong> ${todayReports.length}</p>
+                    <pre>${JSON.stringify(todayReports, null, 2)}</pre>
+                `;
+            }
+        }
+
+        function clearLoginReports() {
+            if (confirm('Are you sure you want to clear ALL login reports? This cannot be undone.')) {
+                localStorage.removeItem('loginReports');
+                alert('Login reports cleared!');
+                loadData();
+            }
+        }
+
+        function createTestReport() {
+            const currentUser = Auth.getCurrentUser();
+            if (!currentUser) {
+                alert('Please log in first!');
+                return;
+            }
+
+            const loginReports = JSON.parse(localStorage.getItem('loginReports') || '[]');
+
+            // Create a test report for today
+            const now = new Date();
+            const loginTime = new Date(now.getTime() - 4 * 60 * 60 * 1000); // 4 hours ago
+
+            loginReports.push({
+                name: currentUser.name,
+                id: currentUser.id,
+                role: currentUser.role,
+                login: loginTime.toISOString(),
+                logout: now.toISOString()
+            });
+
+            localStorage.setItem('loginReports', JSON.stringify(loginReports));
+            alert('Test report created for today!');
+            loadData();
+        }
+
+        function testLoginLogout() {
+            const currentUser = Auth.getCurrentUser();
+            if (!currentUser) {
+                alert('Please log in first!');
+                return;
+            }
+
+            // Simulate a login report
+            const loginReports = JSON.parse(localStorage.getItem('loginReports') || '[]');
+            loginReports.push({
+                name: currentUser.name,
+                id: currentUser.id,
+                role: currentUser.role,
+                login: new Date().toISOString(),
+                logout: null
+            });
+            localStorage.setItem('loginReports', JSON.stringify(loginReports));
+
+            alert('Simulated login! Check the attendance page now.');
+            loadData();
+        }
+
+        // Load data on page load
+        loadData();
+    </script>
+</body>
+
+</html>

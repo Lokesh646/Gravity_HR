@@ -1,0 +1,8 @@
+@import 'dashboard-common.css';
+
+/* Manager Specific Dashboard Styles */
+.manager-special-button {
+    background: var(--primary-color);
+    color: white;
+    /* Add more as needed */
+}

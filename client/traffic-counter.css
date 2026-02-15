@@ -1,0 +1,144 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&display=swap');
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: url("background.jpg") no-repeat center center fixed;
+  background-size: cover;
+  color: #ffffff;
+  text-align: center;
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow-x: hidden;
+}
+
+
+
+h1 {
+  font-size: 3.5rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #ffffff;
+}
+
+/* Inline employee info */
+.info-inline {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #F8DE6F;
+  margin-bottom: 20px;
+}
+
+#counter-table {
+  margin: auto;
+  border-collapse: collapse;
+  width: 90%;
+  max-width: 900px;
+  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+th, td {
+  padding: 16px;
+  font-size: 15px;
+  color: #ffffff;
+}
+
+th {
+  background-color: rgba(255, 255, 255, 0.1);
+  font-weight: 500;
+  color: #F8DE6F;
+}
+
+tbody tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.07);
+  transition: background 0.3s ease;
+}
+
+#controls {
+  margin-top: 40px;
+}
+
+button {
+  font-size: 15px;
+  margin: 12px;
+  padding: 12px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+
+
+button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.05);
+  box-shadow: 0 0 12px #F8DE6F;
+}
+
+/* Count animation */
+.counter-animate {
+  font-weight: 600;
+  font-size: 1.0rem;
+  color: #f10101;
+  transition: color 0.3s ease;
+}
+
+/* 🧊 Glass style for header */
+.headline-glass {
+  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 20px 40px;
+  margin-bottom: 30px;
+  display: inline-block;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 0 20px rgba(248, 222, 111, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Highlighted header text */
+.headline-glass h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #F8DE6F;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+}
+
+/* 🅰️ Logo container at top-left */
+.logo-box {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  background: rgba(255, 255, 255, 0.2);  /* semi-transparent white */
+  padding: 10px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  z-index: 999;
+  backdrop-filter: blur(6px);
+}
+
+/* 🖼️ Logo image styling */
+.logo-img {
+  height: 80px;
+  width: auto;
+  display: block;
+}
