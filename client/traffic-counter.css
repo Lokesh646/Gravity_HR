@@ -46,7 +46,8 @@ h1 {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
 }
 
-th, td {
+th,
+td {
   padding: 16px;
   font-size: 15px;
   color: #ffffff;
@@ -95,10 +96,24 @@ button:hover {
 
 /* Count animation */
 .counter-animate {
-  font-weight: 600;
-  font-size: 1.0rem;
-  color: #f10101;
-  transition: color 0.3s ease;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #F8DE6F !important;
+  text-shadow: 0 0 10px rgba(248, 222, 111, 0.8);
+  transition: all 0.3s ease;
+  display: inline-block;
+  transform: scale(1.3);
+}
+
+.active-traffic-row {
+  background-color: rgba(99, 102, 241, 0.25) !important;
+  border-left: 4px solid #6366f1;
+  box-shadow: inset 4px 0 10px rgba(99, 102, 241, 0.1);
+}
+
+.active-traffic-row th {
+  color: #fff !important;
+  font-weight: 700;
 }
 
 /* 🧊 Glass style for header */
@@ -128,10 +143,11 @@ button:hover {
   position: absolute;
   top: 30px;
   left: 30px;
-  background: rgba(255, 255, 255, 0.2);  /* semi-transparent white */
+  background: rgba(255, 255, 255, 0.2);
+  /* semi-transparent white */
   padding: 10px;
   border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   z-index: 999;
   backdrop-filter: blur(6px);
 }

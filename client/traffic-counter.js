@@ -23,145 +23,142 @@ function saveCurrentSession() {
   }));
   localStorage.setItem("alienTrafficCounts", JSON.stringify(data));
 }
-// 2. HELPER FUNCTIONS
-
-// 2. HELPER FUNCTIONS
 
 function highlightRow() {
   if (!trafficCounterState.table) return;
-  const rows = trafficCounterState.table.rows;
-  if (!rows || rows.length === 0) return;
-
-  // Clamp row index logic
-  if (trafficCounterState.currentRow < 0) {
-    trafficCounterState.currentRow = rows.length - 1;
-  } else if (trafficCounterState.currentRow >= rows.length) {
-    trafficCounterState.currentRow = 0;
-  }
-
-  // Apply visual class
-  Array.from(rows).forEach((row, i) => {
+  [...trafficCounterState.table.rows].forEach((tr, i) => {
     if (i === trafficCounterState.currentRow) {
-      row.classList.add('active-traffic-row');
-      // Ensure smooth scroll into view if needed
-      // row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      tr.classList.add("active-traffic-row");
     } else {
-      row.classList.remove('active-traffic-row');
+      tr.classList.remove("active-traffic-row");
     }
   });
 }
 
-// Gamepad polling state
-const gamepadState = {
-  lastTimestamp: 0,
-  buttonCooldowns: Array(16).fill(0) // Cooldown per button
-};
+function increment(rowIndex, colIndex) {
+  if (!trafficCounterState.table || !trafficCounterState.table.rows[rowIndex]) return;
+  const cell = trafficCounterState.table.rows[rowIndex].cells[colIndex + 1];
+  const oldValue = parseInt(cell.textContent || "0");
+  const newValue = oldValue + 1;
 
-function handleInputLoop() {
-  const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-  if (!gamepads) return;
+  cell.textContent = newValue;
+  saveCurrentSession();
 
-  const gp = gamepads[0]; // Use first controller found
-  if (gp) {
-    const now = Date.now();
+  cell.classList.add("counter-animate");
+  setTimeout(() => {
+    cell.classList.remove("counter-animate");
+  }, 400);
 
-    // D-PAD / AXES HANDLING FOR ROW NAVIGATION
-    // Standard mapping: Axis 9 is D-pad vertical on some, Headers 12/13 on others.
-    // Let's assume Standard Gamepad: Button 12 (Up), Button 13 (Down)
+  // Trigger dashboard update if visible (Decoupled to prevent freezes)
+  if (typeof updateStats === 'function') {
+    setTimeout(updateStats, 10);
+  }
+}
 
-    // Check UP (Button 12)
-    if (gp.buttons[12] && gp.buttons[12].pressed) {
-      if (now > gamepadState.buttonCooldowns[12]) {
-        trafficCounterState.currentRow--;
-        highlightRow();
-        gamepadState.buttonCooldowns[12] = now + 200; // 200ms debounce for nav
-      }
+// 2. Global Event Listeners (Keyboard & Gamepad) - Only attached once
+function attachGlobalListeners() {
+  if (trafficCounterState.isInitialized) return;
+
+  // Keyboard
+  window.addEventListener('keydown', (e) => {
+    if (!trafficCounterState.table) return;
+    const key = e.key;
+    if (key === "q") {
+      trafficCounterState.currentRow = (trafficCounterState.currentRow - 1 + 6) % 6;
+    } else if (key === "e") {
+      trafficCounterState.currentRow = (trafficCounterState.currentRow + 1) % 6;
     }
-    // Check DOWN (Button 13)
-    else if (gp.buttons[13] && gp.buttons[13].pressed) {
-      if (now > gamepadState.buttonCooldowns[13]) {
-        trafficCounterState.currentRow++;
-        highlightRow();
-        gamepadState.buttonCooldowns[13] = now + 200;
+
+    if (key === "1") increment(trafficCounterState.currentRow, 0);
+    else if (key === "2") increment(trafficCounterState.currentRow, 1);
+    else if (key === "3") increment(trafficCounterState.currentRow, 2);
+    else if (key === "4") increment(trafficCounterState.currentRow, 3);
+    else if (key === "ArrowUp" || key.toLowerCase() === "w") increment(trafficCounterState.currentRow, 4);
+    else if (key === "ArrowRight" || key.toLowerCase() === "d") increment(trafficCounterState.currentRow, 5);
+    else if (key === "ArrowDown" || key.toLowerCase() === "s") increment(trafficCounterState.currentRow, 6);
+    else if (key === "ArrowLeft" || key.toLowerCase() === "a") increment(trafficCounterState.currentRow, 7);
+
+    highlightRow();
+  });
+
+  // Gamepad
+  let lastButtons = [];
+  function pollGamepad() {
+    const gamepads = navigator.getGamepads();
+    const gp = gamepads[0];
+    if (!gp || !trafficCounterState.table) return;
+
+    const buttons = gp.buttons.map(btn => btn.pressed);
+    const axes = gp.axes;
+
+    const bearLeft = buttons[6];  // L2
+    const bearRight = buttons[7]; // R2
+    const left = buttons[4];      // L1
+    const right = buttons[5];     // R1
+
+    if (bearLeft && bearRight) trafficCounterState.currentRow = 5;
+    else if (bearLeft) trafficCounterState.currentRow = 0;
+    else if (left) trafficCounterState.currentRow = 1;
+    else if (right) trafficCounterState.currentRow = 3;
+    else if (bearRight) trafficCounterState.currentRow = 4;
+    else trafficCounterState.currentRow = 2; // Default thru if nothing pressed but active? Actually simpler: only change row if pressed.
+
+    const faceButtonMap = { 0: 0, 1: 1, 2: 2, 3: 3 };
+    for (let [btnStr, col] of Object.entries(faceButtonMap)) {
+      const btn = parseInt(btnStr);
+      if (buttons[btn] && !lastButtons[btn]) {
+        increment(trafficCounterState.currentRow, col);
       }
+      lastButtons[btn] = buttons[btn];
     }
 
-    // VEHICLE COUNT BUTTONS (0-7)
-    // Mapped to columns 1-8 (indices)
-    // 0(A), 1(B), 2(X), 3(Y), 4(LB), 5(RB), 6(LT), 7(RT)
-    const buttonMap = [0, 1, 2, 3, 4, 5, 6, 7];
-
-    if (trafficCounterState.table && trafficCounterState.table.rows.length > 0) {
-      const row = trafficCounterState.table.rows[trafficCounterState.currentRow];
-      if (row) {
-        buttonMap.forEach((btnIdx, colOffset) => {
-          if (gp.buttons[btnIdx] && gp.buttons[btnIdx].pressed) {
-            if (now > (gamepadState.buttonCooldowns[btnIdx] || 0)) {
-              // Increment Count
-              const cell = row.cells[colOffset + 1];
-              if (cell) {
-                let val = parseInt(cell.textContent || '0');
-                cell.textContent = val + 1;
-
-                // Visual Feedback
-                cell.classList.add('counter-animate');
-                setTimeout(() => cell.classList.remove('counter-animate'), 200);
-
-                saveCurrentSession();
-              }
-              gamepadState.buttonCooldowns[btnIdx] = now + 200; // 200ms debounce
-            }
-          }
-        });
-      }
+    const deadzone = 0.5;
+    if (axes[1] < -deadzone && !lastButtons['bus']) {
+      increment(trafficCounterState.currentRow, 4);
+      lastButtons['bus'] = true;
+    } else if (axes[1] >= -deadzone) {
+      lastButtons['bus'] = false;
     }
+    if (axes[0] > deadzone && !lastButtons['mc']) {
+      increment(trafficCounterState.currentRow, 5);
+      lastButtons['mc'] = true;
+    } else if (axes[0] <= deadzone) {
+      lastButtons['mc'] = false;
+    }
+    if (axes[1] > deadzone && !lastButtons['pc']) {
+      increment(trafficCounterState.currentRow, 6);
+      lastButtons['pc'] = true;
+    } else if (axes[1] >= deadzone) {
+      lastButtons['pc'] = false;
+    }
+    if (axes[0] < -deadzone && !lastButtons['peds']) {
+      increment(trafficCounterState.currentRow, 7);
+      lastButtons['peds'] = true;
+    } else if (axes[0] >= -deadzone) {
+      lastButtons['peds'] = false;
+    }
+    highlightRow();
   }
 
-  trafficCounterState.gamepadRequestIdx = requestAnimationFrame(handleInputLoop);
+  function gamepadLoop() {
+    pollGamepad();
+    trafficCounterState.gamepadRequestIdx = requestAnimationFrame(gamepadLoop);
+  }
+
+  window.addEventListener("gamepadconnected", (e) => {
+    console.log("🎮 Gamepad connected:", e.gamepad.id);
+    gamepadLoop();
+  });
+
+  window.addEventListener("gamepaddisconnected", () => {
+    console.log("🎮 Gamepad disconnected");
+    cancelAnimationFrame(trafficCounterState.gamepadRequestIdx);
+  });
+
+  trafficCounterState.isInitialized = true;
 }
 
-function attachGlobalListeners() {
-  // 1. Keyboard Navigation & Fallback Inputs
-  document.addEventListener('keydown', (e) => {
-    // Only act if on traffic page and table exists
-    if (!trafficCounterState.table) return;
-
-    if (e.key === 'ArrowUp') {
-      trafficCounterState.currentRow--;
-      highlightRow();
-      e.preventDefault();
-    } else if (e.key === 'ArrowDown') {
-      trafficCounterState.currentRow++;
-      highlightRow();
-      e.preventDefault();
-    } else if (e.key >= '1' && e.key <= '8') {
-      // Keyboard numeric fallback (1-8)
-      const colIdx = parseInt(e.key);
-      const row = trafficCounterState.table.rows[trafficCounterState.currentRow];
-      if (row && row.cells[colIdx]) {
-        const cell = row.cells[colIdx];
-        let val = parseInt(cell.textContent || '0');
-        cell.textContent = val + 1;
-
-        cell.classList.add('counter-animate');
-        setTimeout(() => cell.classList.remove('counter-animate'), 200);
-
-        saveCurrentSession();
-      }
-    }
-  });
-
-  // 2. Start Gamepad Polling
-  if (trafficCounterState.gamepadRequestIdx) cancelAnimationFrame(trafficCounterState.gamepadRequestIdx);
-  trafficCounterState.gamepadRequestIdx = requestAnimationFrame(handleInputLoop);
-
-  // 3. Listen for Gamepad Connections (optional, polling handles it mostly)
-  window.addEventListener("gamepadconnected", (e) => {
-    console.log("Gamepad connected at index %d: %s. %d buttons, %d axes.",
-      e.gamepad.index, e.gamepad.id,
-      e.gamepad.buttons.length, e.gamepad.axes.length);
-  });
-}// 3. MAIN INITIALIZATION (Called everytime section is loaded)
+// 3. MAIN INITIALIZATION (Called everytime section is loaded)
 window.initTrafficCounter = function () {
   if (!trafficCounterState.sessionStartTime) {
     trafficCounterState.sessionStartTime = Date.now();
@@ -174,20 +171,24 @@ window.initTrafficCounter = function () {
   // Restore saved session data if any
   const savedData = localStorage.getItem("alienTrafficCounts");
   if (savedData) {
-    const data = JSON.parse(savedData);
-    [...trafficCounterState.table.rows].forEach((row, i) => {
-      const d = data[i];
-      if (d) {
-        row.cells[1].textContent = d.car || "0";
-        row.cells[2].textContent = d.lgv || "0";
-        row.cells[3].textContent = d.ogv1 || "0";
-        row.cells[4].textContent = d.ogv2 || "0";
-        row.cells[5].textContent = d.bus || "0";
-        row.cells[6].textContent = d.mc || "0";
-        row.cells[7].textContent = d.pc || "0";
-        row.cells[8].textContent = d.peds || "0";
-      }
-    });
+    try {
+      const data = JSON.parse(savedData);
+      [...trafficCounterState.table.rows].forEach((row, i) => {
+        const d = data[i];
+        if (d) {
+          row.cells[1].textContent = d.car || "0";
+          row.cells[2].textContent = d.lgv || "0";
+          row.cells[3].textContent = d.ogv1 || "0";
+          row.cells[4].textContent = d.ogv2 || "0";
+          row.cells[5].textContent = d.bus || "0";
+          row.cells[6].textContent = d.mc || "0";
+          row.cells[7].textContent = d.pc || "0";
+          row.cells[8].textContent = d.peds || "0";
+        }
+      });
+    } catch (e) {
+      console.error("Error parsing saved traffic data:", e);
+    }
   }
 
   highlightRow();
@@ -197,26 +198,32 @@ window.initTrafficCounter = function () {
   const resetBtn = document.getElementById("reset");
   if (resetBtn) {
     resetBtn.onclick = () => {
-      showConfirm(
-        "Reset Session?",
-        "Are you sure you want to clear all counts for this session? This cannot be undone.",
-        () => {
-          [...trafficCounterState.table.rows].forEach(row => {
-            [...row.cells].forEach((cell, i) => {
-              if (i > 0) cell.textContent = "0";
-            });
+      const performReset = () => {
+        [...trafficCounterState.table.rows].forEach(row => {
+          [...row.cells].forEach((cell, i) => {
+            if (i > 0) cell.textContent = "0";
           });
-          localStorage.removeItem("alienTrafficCounts");
-          trafficCounterState.sessionStartTime = Date.now(); // Reset start time
-          trafficCounterState.currentRow = 0;
-          highlightRow();
-          if (typeof updateStats === 'function') {
-            setTimeout(updateStats, 10);
-          }
-        },
-        'fa-circle-question',
-        'danger'
-      );
+        });
+        localStorage.removeItem("alienTrafficCounts");
+        trafficCounterState.sessionStartTime = Date.now(); // Reset start time
+        trafficCounterState.currentRow = 0;
+        highlightRow();
+        if (typeof updateStats === 'function') {
+          setTimeout(updateStats, 10);
+        }
+      };
+
+      if (typeof showConfirm === 'function') {
+        showConfirm(
+          "Reset Session?",
+          "Are you sure you want to clear all counts for this session? This cannot be undone.",
+          performReset,
+          'fa-circle-question',
+          'danger'
+        );
+      } else if (confirm("Reset all counts for this session?")) {
+        performReset();
+      }
     };
   }
 
@@ -266,7 +273,7 @@ window.initTrafficCounter = function () {
           dayEntry.contributors[userId] = {
             name: user ? user.name : 'Unknown User',
             role: user ? user.role : 'N/A',
-            sessions: [] // Track multiple saves as sessions
+            sessions: []
           };
         }
 
@@ -292,6 +299,8 @@ window.initTrafficCounter = function () {
 
         if (typeof showSuccess === 'function') {
           showSuccess("Traffic Data Saved Successfully!");
+        } else {
+          alert("Traffic Data Saved Successfully!");
         }
 
         if (typeof updateStats === 'function') {
