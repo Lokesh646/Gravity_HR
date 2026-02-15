@@ -23,9 +23,145 @@ function saveCurrentSession() {
   }));
   localStorage.setItem("alienTrafficCounts", JSON.stringify(data));
 }
-// ... [rest of the file helpers remain same until initTrafficCounter]
+// 2. HELPER FUNCTIONS
 
-// 3. MAIN INITIALIZATION (Called everytime section is loaded)
+// 2. HELPER FUNCTIONS
+
+function highlightRow() {
+  if (!trafficCounterState.table) return;
+  const rows = trafficCounterState.table.rows;
+  if (!rows || rows.length === 0) return;
+
+  // Clamp row index logic
+  if (trafficCounterState.currentRow < 0) {
+    trafficCounterState.currentRow = rows.length - 1;
+  } else if (trafficCounterState.currentRow >= rows.length) {
+    trafficCounterState.currentRow = 0;
+  }
+
+  // Apply visual class
+  Array.from(rows).forEach((row, i) => {
+    if (i === trafficCounterState.currentRow) {
+      row.classList.add('active-traffic-row');
+      // Ensure smooth scroll into view if needed
+      // row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+      row.classList.remove('active-traffic-row');
+    }
+  });
+}
+
+// Gamepad polling state
+const gamepadState = {
+  lastTimestamp: 0,
+  buttonCooldowns: Array(16).fill(0) // Cooldown per button
+};
+
+function handleInputLoop() {
+  const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+  if (!gamepads) return;
+
+  const gp = gamepads[0]; // Use first controller found
+  if (gp) {
+    const now = Date.now();
+
+    // D-PAD / AXES HANDLING FOR ROW NAVIGATION
+    // Standard mapping: Axis 9 is D-pad vertical on some, Headers 12/13 on others.
+    // Let's assume Standard Gamepad: Button 12 (Up), Button 13 (Down)
+
+    // Check UP (Button 12)
+    if (gp.buttons[12] && gp.buttons[12].pressed) {
+      if (now > gamepadState.buttonCooldowns[12]) {
+        trafficCounterState.currentRow--;
+        highlightRow();
+        gamepadState.buttonCooldowns[12] = now + 200; // 200ms debounce for nav
+      }
+    }
+    // Check DOWN (Button 13)
+    else if (gp.buttons[13] && gp.buttons[13].pressed) {
+      if (now > gamepadState.buttonCooldowns[13]) {
+        trafficCounterState.currentRow++;
+        highlightRow();
+        gamepadState.buttonCooldowns[13] = now + 200;
+      }
+    }
+
+    // VEHICLE COUNT BUTTONS (0-7)
+    // Mapped to columns 1-8 (indices)
+    // 0(A), 1(B), 2(X), 3(Y), 4(LB), 5(RB), 6(LT), 7(RT)
+    const buttonMap = [0, 1, 2, 3, 4, 5, 6, 7];
+
+    if (trafficCounterState.table && trafficCounterState.table.rows.length > 0) {
+      const row = trafficCounterState.table.rows[trafficCounterState.currentRow];
+      if (row) {
+        buttonMap.forEach((btnIdx, colOffset) => {
+          if (gp.buttons[btnIdx] && gp.buttons[btnIdx].pressed) {
+            if (now > (gamepadState.buttonCooldowns[btnIdx] || 0)) {
+              // Increment Count
+              const cell = row.cells[colOffset + 1];
+              if (cell) {
+                let val = parseInt(cell.textContent || '0');
+                cell.textContent = val + 1;
+
+                // Visual Feedback
+                cell.classList.add('counter-animate');
+                setTimeout(() => cell.classList.remove('counter-animate'), 200);
+
+                saveCurrentSession();
+              }
+              gamepadState.buttonCooldowns[btnIdx] = now + 200; // 200ms debounce
+            }
+          }
+        });
+      }
+    }
+  }
+
+  trafficCounterState.gamepadRequestIdx = requestAnimationFrame(handleInputLoop);
+}
+
+function attachGlobalListeners() {
+  // 1. Keyboard Navigation & Fallback Inputs
+  document.addEventListener('keydown', (e) => {
+    // Only act if on traffic page and table exists
+    if (!trafficCounterState.table) return;
+
+    if (e.key === 'ArrowUp') {
+      trafficCounterState.currentRow--;
+      highlightRow();
+      e.preventDefault();
+    } else if (e.key === 'ArrowDown') {
+      trafficCounterState.currentRow++;
+      highlightRow();
+      e.preventDefault();
+    } else if (e.key >= '1' && e.key <= '8') {
+      // Keyboard numeric fallback (1-8)
+      const colIdx = parseInt(e.key);
+      const row = trafficCounterState.table.rows[trafficCounterState.currentRow];
+      if (row && row.cells[colIdx]) {
+        const cell = row.cells[colIdx];
+        let val = parseInt(cell.textContent || '0');
+        cell.textContent = val + 1;
+
+        cell.classList.add('counter-animate');
+        setTimeout(() => cell.classList.remove('counter-animate'), 200);
+
+        saveCurrentSession();
+      }
+    }
+  });
+
+  // 2. Start Gamepad Polling
+  if (trafficCounterState.gamepadRequestIdx) cancelAnimationFrame(trafficCounterState.gamepadRequestIdx);
+  trafficCounterState.gamepadRequestIdx = requestAnimationFrame(handleInputLoop);
+
+  // 3. Listen for Gamepad Connections (optional, polling handles it mostly)
+  window.addEventListener("gamepadconnected", (e) => {
+    console.log("Gamepad connected at index %d: %s. %d buttons, %d axes.",
+      e.gamepad.index, e.gamepad.id,
+      e.gamepad.buttons.length, e.gamepad.axes.length);
+  });
+}// 3. MAIN INITIALIZATION (Called everytime section is loaded)
 window.initTrafficCounter = function () {
   if (!trafficCounterState.sessionStartTime) {
     trafficCounterState.sessionStartTime = Date.now();
