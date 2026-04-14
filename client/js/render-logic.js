@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Simplified header info
     const header = document.querySelector('.section-header');
 
-    // Ensure sidebar is rendered regardless of header presence
+    // Ensure sidebar and stats are rendered
     renderSidebar(user.role);
     renderDashboardStats(user.role);
 });
@@ -35,14 +35,17 @@ function renderSidebar(role) {
 
     const menuItems = [
         { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-line', href: dashHref, roles: ['Admin', 'Manager', 'HR', 'Team Leader'] },
-        { id: 'traffic', label: 'Traffic Counter', icon: 'fa-stopwatch', href: dashHref, roles: ['Employee', 'Team Leader', 'Manager', 'Admin', 'HR'] },
+        { id: 'traffic', label: 'Traffic Counter', icon: 'fa-stopwatch', href: dashHref, roles: ['Employee', 'Team Leader', 'Manager'] },
         { id: 'employees', label: 'Employees', icon: 'fa-users', href: 'employees.html', roles: ['Admin', 'HR'] },
         { id: 'packages', label: 'Packages', icon: 'fa-box-open', href: 'packages.html', roles: ['Admin', 'HR'] },
         { id: 'payout', label: 'Payout', icon: 'fa-file-invoice-dollar', href: 'payout.html', roles: ['Admin', 'HR'] },
         { id: 'attendance', label: 'Attendance', icon: 'fa-calendar-check', href: 'attendance.html', roles: ['Admin', 'Manager', 'HR', 'Team Leader', 'Employee'] },
-        { id: 'leave-master', label: 'Leave Master', icon: 'fa-id-card', href: 'leave-master.html', roles: ['Admin', 'Manager', 'HR', 'Team Leader', 'Employee'], comingSoon: true },
-        { id: 'leave-requests', label: 'Leave Requests', icon: 'fa-envelope-open-text', href: 'leave-requests.html', roles: ['Admin', 'Manager', 'HR', 'Team Leader', 'Employee'], comingSoon: true },
+        { id: 'tasks', label: 'Tasks', icon: 'fa-list-check', href: 'tasks.html', roles: ['Admin', 'Manager', 'HR'] },
+        { id: 'timer', label: 'Timer', icon: 'fa-stopwatch', href: 'timer.html', roles: ['Admin', 'Manager', 'HR', 'Team Leader', 'Employee'] },
+        { id: 'leave-master', label: 'Leave Master', icon: 'fa-id-card', href: 'leave-master.html', roles: ['Admin', 'Manager', 'HR', 'Team Leader', 'Employee'] },
+        { id: 'leave-requests', label: 'Leave Requests', icon: 'fa-envelope-open-text', href: 'leave-requests.html', roles: ['Admin', 'Manager', 'HR', 'Team Leader'] },
         { id: 'reports', label: 'Reports', icon: 'fa-chart-pie', href: 'reports.html', roles: ['Admin', 'HR'] },
+        { id: 'stories', label: 'Stories', icon: 'fa-clapperboard', href: 'stories.html', roles: ['Admin', 'Manager', 'HR', 'Team Leader', 'Employee'] },
         { id: 'teams', label: 'Teams', icon: 'fa-users-gear', href: 'teams.html', roles: ['Team Leader', 'Manager', 'Admin'] }
     ];
 
@@ -64,23 +67,38 @@ function renderSidebar(role) {
 
         a.onclick = (e) => {
             const page = document.body.dataset.page || '';
-            const isDashboardPage = page.includes('dashboard');
             const isTargetDashboardSection = dashboardSections.includes(item.id);
+            const isMainDashboardHover = item.href === 'dashboard.html';
 
-            // 1. If we are ALREADY on dashboard and clicking a dashboard section -> SPA Move
+            // If it's a dashboard section but points to their custom dashboard view (manager/tl/employee)
+            if (isTargetDashboardSection && !isMainDashboardHover) {
+                // Just use regular href navigation without SPA logic, UNLESS we are already on that custom dashboard 
+                // where we want to let SPA switch it locally via loadSection just for uniformity.
+                if (page === item.href.replace('.html', '')) {
+                    e.preventDefault();
+                    setActiveNav(item.id);
+                    loadSection(item.id, role);
+                } else {
+                    // Navigating from outside their dashboard to their dashboard
+                    localStorage.setItem('activeDashboardSection', item.id);
+                }
+                return;
+            }
+
+            // Legacy SPA Logic for Admin/HR `dashboard.html`
+            const isDashboardPage = page === 'dashboard';
+
+            // 1. If we are ALREADY on main dashboard and clicking a dashboard section -> SPA Move
             if (isDashboardPage && isTargetDashboardSection) {
                 e.preventDefault();
                 setActiveNav(item.id);
                 loadSection(item.id, role);
             }
-            // 2. If we are clicking a dashboard section link (from anywhere) -> Set Preference & Navigate
+            // 2. If we are clicking a main dashboard section link (from anywhere) -> Set Preference & Navigate
             else if (isTargetDashboardSection) {
-                // e.g. Clicking "Traffic Counter" from Employees page
-                // We let the href='dashboard.html' take effect, but PRE-SET the section
                 localStorage.setItem('activeDashboardSection', item.id);
-                // Allow default navigation
             }
-            // 3. Normal off-page navigation (e.g. Employees) -> Allow default
+            // 3. Normal off-page navigation -> Allow default
         };
         navLinks.appendChild(a);
     });
@@ -209,10 +227,14 @@ function renderDashboardStats(role) {
     const statsGrid = document.getElementById('statsGrid');
     if (!statsGrid) return;
 
-    // Optimization: Skip rendering if dashboard is hidden or on another section
-    const activeSection = localStorage.getItem('activeDashboardSection');
-    if (activeSection && activeSection !== 'dashboard') return;
-    if (statsGrid.style.display === 'none') return;
+    const page = document.body.dataset.page || '';
+
+    // Optimization: Skip rendering if on dashboard but another section is active
+    if (page === 'dashboard') {
+        const activeSection = localStorage.getItem('activeDashboardSection');
+        if (activeSection && activeSection !== 'dashboard') return;
+        if (statsGrid.style.display === 'none') return;
+    }
 
     statsGrid.innerHTML = '';
 
@@ -228,8 +250,8 @@ function renderDashboardStats(role) {
     // 2. Add Total Employees Card
     addStatCard(statsGrid, 'Total Employees', activeEmps.length, 'fa-users', 'var(--primary-color)');
 
-    // 2.5 Add Total Traffic Card
-    addStatCard(statsGrid, 'Total Traffic', '0', 'fa-car-side', '#3973ff', null, 'statTotalTraffic');
+    // 2.5 Add Total Work Hours Card
+    addStatCard(statsGrid, 'Work Hours Today', '0h 0m', 'fa-stopwatch', '#3973ff', 'timer.html', 'statTotalHours');
 
     // 3. Add Role-based breakdown
     const roleCounts = activeEmps.reduce((acc, emp) => {

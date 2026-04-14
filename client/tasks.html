@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks - Gravity HR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .tab-nav-simple .tab-btn-nav {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+        .tab-nav-simple .tab-btn-nav.active {
+            background: var(--primary-gradient, linear-gradient(135deg, var(--primary-color), var(--secondary-color)));
+            color: white;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+        .tab-nav-simple .tab-btn-nav.active::after {
+            display: none !important;
+        }
+        .tab-nav-simple .tab-btn-nav:hover:not(.active) {
+            background: rgba(255,255,255,0.05);
+            border-color: var(--glass-border);
+        }
+        .tab-pane {
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Searchable Dropdown Styles */
+        .custom-select-container {
+            position: relative;
+            width: 100%;
+        }
+        
+        .searchable-dropdown {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .searchable-dropdown:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .search-options-list {
+            max-height: 200px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .search-options-list::-webkit-scrollbar {
+            width: 5px;
+        }
+        .search-options-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+        
+        .search-option {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0.75rem;
+            border-radius: 6px;
+            color: var(--text-dim, #e2e8f0);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .search-option:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+        
+        .search-option.selected {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary-color, #6366f1);
+        }
+    </style>
+</head>
+
+<body data-page="tasks">
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="app-layout">
+        <!-- SIDEBAR -->
+        <aside class="sidebar glass-panel">
+            <div class="brand">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>Gravity HR</span>
+            </div>
+            <nav class="nav-links">
+                <!-- Dynamically rendered by JS -->
+            </nav>
+            <div style="margin-top: auto; padding: 1rem 1.5rem;">
+                <button id="themeToggle" class="btn-secondary btn-sm"
+                    style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--input-bg);">
+                    <i class="fa-solid fa-moon"></i>
+                    <span>Dark Mode</span>
+                </button>
+                <button onclick="Auth.logout()" class="btn-secondary btn-sm"
+                    style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--input-bg); margin-top: 10px; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+            <a href="user.html" class="user-profile" style="text-decoration: none; color: inherit; cursor: pointer;">
+                <div class="avatar">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="user-info">
+                    <span class="name" id="sidebarUserName">User</span>
+                    <span class="role" id="sidebarUserRole">Role</span>
+                </div>
+            </a>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="main-content">
+            <header class="section-header">
+                <div style="margin-bottom: 1.5rem;">
+                    <h1>Task Management</h1>
+                    <p>Track and manage project tasks</p>
+                </div>
+
+                <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 2rem;">
+                    <a href="dashboard.html" class="btn-secondary btn-sm" style="text-decoration: none;">
+                        <i class="fa-solid fa-house"></i> Back to Dashboard
+                    </a>
+
+                    <div class="search-container" style="position: relative; flex: 1; min-width: 250px;">
+                        <i class="fa-solid fa-magnifying-glass"
+                            style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none;"></i>
+                        <input type="text" id="projectSearch" placeholder="Search by Project Name or Number..."
+                            style="width: 100%; padding: 0.6rem 1rem 0.6rem 2.8rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-main); font-size: 0.9rem; outline: none; transition: all 0.3s ease;">
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                        <button id="exportProjectsBtn" class="btn-secondary btn-sm" onclick="TaskApp.exportCSV()"><i
+                                class="fa-solid fa-file-export"></i> Export</button>
+                        <button id="importProjectsBtn" class="btn-secondary btn-sm"
+                            onclick="TaskApp.showImportModal()"><i class="fa-solid fa-file-import"></i> Import</button>
+                        <!-- Only Admin/Managers can create projects -->
+                        <button class="btn-primary btn-sm" onclick="TaskApp.openCreateModal()" id="createProjectBtn">
+                            <i class="fa-solid fa-plus"></i> New Project
+                        </button>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Tab Navigation -->
+            <div class="glass-panel" style="padding: 0.75rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                <div class="tab-nav-simple" style="display: flex; gap: 1rem;">
+                    <button id="tab-btn-projects" class="tab-btn-nav" onclick="TaskApp.switchTab('projects', this)">
+                        <i class="fa-solid fa-layer-group"></i> Projects
+                    </button>
+                    <button id="tab-btn-clients" class="tab-btn-nav" onclick="TaskApp.switchTab('clients', this)">
+                        <i class="fa-solid fa-user-tie"></i> Clients
+                    </button>
+                    <button id="tab-btn-tags" class="tab-btn-nav" onclick="TaskApp.switchTab('tags', this)">
+                        <i class="fa-solid fa-tags"></i> Tags
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab: Projects -->
+            <div id="tab-projects" class="tab-pane" style="display: none;">
+
+
+            <!-- Current Projects -->
+            <div class="glass-panel table-container" style="margin-bottom: 2rem;">
+                <div
+                    style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="width: 10px; height: 10px; border-radius: 50%; background: #3b82f6;"></div>
+                    <h3 style="margin: 0; font-size: 1rem;">Current Projects</h3>
+                    <span id="currentProjectCount"
+                        style="margin-left: auto; font-size: 0.8rem; color: var(--text-dim);"></span>
+                </div>
+                <table class="data-table" id="projectsTable">
+                    <thead>
+                        <tr>
+                            <th onclick="TaskApp.handleSort('number')" style="cursor: pointer;">Number <i class="fa-solid fa-sort"></i></th>
+                            <th onclick="TaskApp.handleSort('name')" style="cursor: pointer;">Project Name <i class="fa-solid fa-sort"></i></th>
+                            <th onclick="TaskApp.handleSort('clientId')" style="cursor: pointer;">Client ID <i class="fa-solid fa-sort"></i></th>
+                            <th onclick="TaskApp.handleSort('deadline')" style="cursor: pointer;">Deadline <i class="fa-solid fa-sort"></i></th>
+                            <th onclick="TaskApp.handleSort('priority')" style="cursor: pointer;">Priority <i class="fa-solid fa-sort"></i></th>
+                            <th onclick="TaskApp.handleSort('assignedToName')" style="cursor: pointer;">Assigned TL <i class="fa-solid fa-sort"></i></th>
+                            <th onclick="TaskApp.handleSort('status')" style="cursor: pointer;">Status <i class="fa-solid fa-sort"></i></th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="projectsContainer">
+                        <!-- Current projects rendered here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Completed Projects -->
+            <div class="glass-panel table-container">
+                <div
+                    style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="width: 10px; height: 10px; border-radius: 50%; background: #22c55e;"></div>
+                    <h3 style="margin: 0; font-size: 1rem;">Completed Projects</h3>
+                    <span id="completedProjectCount"
+                        style="margin-left: auto; font-size: 0.8rem; color: var(--text-dim);"></span>
+                </div>
+                <table class="data-table" id="completedProjectsTable">
+                    <thead>
+                        <tr>
+                            <th onclick="TaskApp.handleSort('number')" style="cursor: pointer;">Number <i class="fa-solid fa-sort"></i></th>
+                            <th onclick="TaskApp.handleSort('name')" style="cursor: pointer;">Project Name <i class="fa-solid fa-sort"></i></th>
+                            <th onclick="TaskApp.handleSort('clientId')" style="cursor: pointer;">Client ID <i class="fa-solid fa-sort"></i></th>
+                            <th onclick="TaskApp.handleSort('deadline')" style="cursor: pointer;">Deadline <i class="fa-solid fa-sort"></i></th>
+                            <th onclick="TaskApp.handleSort('priority')" style="cursor: pointer;">Priority <i class="fa-solid fa-sort"></i></th>
+                            <th onclick="TaskApp.handleSort('assignedToName')" style="cursor: pointer;">Assigned TL <i class="fa-solid fa-sort"></i></th>
+                            <th onclick="TaskApp.handleSort('completedOn')" style="cursor: pointer;">Completed On <i class="fa-solid fa-sort"></i></th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="completedProjectsContainer">
+                        <!-- Completed projects rendered here -->
+                    </tbody>
+                </table>
+            </div>
+            </div> <!-- End Tab: Projects -->
+
+            <!-- Tab: Clients -->
+            <div id="tab-clients" class="tab-pane" style="display: none;">
+                <div class="glass-panel table-container">
+                    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: 0.75rem;">
+                        <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--primary-color);"></div>
+                        <h3 style="margin: 0; font-size: 1rem;">Client Directory</h3>
+                        <span id="clientCount" style="margin-left: auto; font-size: 0.8rem; color: var(--text-dim); margin-right: 15px;">0 clients</span>
+                        <button class="btn-primary btn-sm" onclick="TaskApp.showAddClientModal()">
+                            <i class="fa-solid fa-plus"></i> New Client
+                        </button>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Client ID</th>
+                                <th style="text-align: right; padding-right: 2rem;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientsContainer">
+                            <!-- Clients Rendered Here -->
+                            <tr><td colspan="2" style="text-align: center; padding: 2rem;"><p class="text-dim">No clients found.</p></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab: Tags -->
+            <div id="tab-tags" class="tab-pane" style="display: none;">
+                <div class="glass-panel" style="padding: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 style="margin: 0; font-size: 1rem;">Label Management</h3>
+                        <button class="btn-primary btn-sm" onclick="TaskApp.showAddTagModal()">
+                            <i class="fa-solid fa-plus"></i> New Tag
+                        </button>
+                    </div>
+                    <div id="tagsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                        <!-- Tags Rendered Here -->
+                        <div class="text-dim" style="grid-column: 1/-1; text-align: center; padding: 2rem;">No tags found.</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Project Modal -->
+    <div class="modal-overlay" id="createProjectModal">
+        <div class="modal-content"
+            style="max-width: 800px; padding: 0; overflow: hidden; border-radius: 12px; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1);">
+            <div class="modal-header"
+                style="background: rgba(255, 255, 255, 0.03); padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                <h2 style="font-size: 1.5rem; font-weight: 700; color: #fff; margin: 0;">Add New Project</h2>
+                <button class="close-modal" onclick="TaskApp.closeCreateModal()"
+                    style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center; border: none; color: #fff; cursor: pointer; transition: all 0.2s;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="createProjectForm" style="padding: 2rem;">
+                <div style="display: flex; gap: 3rem;">
+                    <!-- Left Column: Identity -->
+                    <div style="width: 200px; display: flex; flex-direction: column; align-items: center; gap: 1.5rem;">
+                        <div
+                            style="width: 140px; height: 140px; border-radius: 50%; border: 2px dashed rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.02); overflow: hidden; position: relative;">
+                            <i class="fa-solid fa-layer-group" id="projIconPreview"
+                                style="font-size: 3rem; color: rgba(255, 255, 255, 0.4);"></i>
+                        </div>
+                        <div class="form-group" style="width: 100%;">
+                            <label
+                                style="display: block; text-align: center; margin-bottom: 0.5rem; color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Project
+                                Color</label>
+                            <input type="color" id="projColor" value="#6366f1"
+                                style="width: 100%; height: 40px; padding: 4px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer;">
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Form Fields -->
+                    <div style="flex: 1;">
+                        <h4
+                            style="color: #6366f1; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(99, 102, 241, 0.2); padding-bottom: 0.5rem;">
+                            Project Specifications</h4>
+
+                        <div class="input-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                            <div class="form-group">
+                                <label
+                                    style="display: block; margin-bottom: 0.5rem; color: var(--text-dim); font-size: 0.9rem;">Project
+                                    Name</label>
+                                <input type="text" id="projName" required placeholder="Enter project name"
+                                    style="width: 100%; padding: 0.8rem 1rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #fff; outline: none;">
+                            </div>
+                            <div class="form-group" style="position: relative;">
+                                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-dim); font-size: 0.9rem;">Client ID</label>
+                                <div id="createClientSelectContainer" class="custom-select-container">
+                                    <input type="hidden" id="projClientId" required>
+                                    <div class="searchable-dropdown" id="createClientSelectBtn" onclick="TaskApp.toggleCreateClientDropdown(event)">
+                                        <span id="createSelectedClientText">Select Client</span>
+                                        <i class="fa-solid fa-chevron-down" style="font-size: 0.8rem; color: var(--text-dim);"></i>
+                                    </div>
+                                    <div id="createClientDropdownMenu" class="glass-panel" style="display: none; position: absolute; top: calc(100% + 5px); left: 0; width: 100%; z-index: 999; padding: 0.75rem; background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.1);">
+                                        <div style="position: relative; margin-bottom: 0.75rem;">
+                                            <i class="fa-solid fa-search" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 0.85rem;"></i>
+                                            <input type="text" id="createClientSearchInput" placeholder="Search clients..." oninput="TaskApp.filterCreateClientsDropdown()" style="width: 100%; padding: 0.5rem 0.5rem 0.5rem 2.25rem; border-radius: 6px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 0.85rem; outline: none;">
+                                        </div>
+                                        <div id="createClientOptionsList" class="search-options-list">
+                                            <!-- JS populates -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label
+                                    style="display: block; margin-bottom: 0.5rem; color: var(--text-dim); font-size: 0.9rem;">Project
+                                    ID</label>
+                                <input type="text" id="projNumber" required placeholder="PRJ-001"
+                                    style="width: 100%; padding: 0.8rem 1rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #fff; outline: none;">
+                            </div>
+                            <div class="form-group">
+                                <label
+                                    style="display: block; margin-bottom: 0.5rem; color: var(--text-dim); font-size: 0.9rem;">Priority
+                                    Level</label>
+                                <select id="projPriority" required
+                                    style="width: 100%; padding: 0.8rem 1rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #fff; outline: none; appearance: none;">
+                                    <option value="High">High</option>
+                                    <option value="Medium" selected>Medium</option>
+                                    <option value="Low">Low</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label
+                                    style="display: block; margin-bottom: 0.5rem; color: var(--text-dim); font-size: 0.9rem;">Status</label>
+                                <select id="projStatus" required
+                                    style="width: 100%; padding: 0.8rem 1rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #fff; outline: none; appearance: none;">
+                                    <option value="Created" selected>Created</option>
+                                    <option value="Planned">Planned</option>
+                                    <option value="In Progress">In Progress</option>
+                                    <option value="On Hold">On Hold</option>
+                                    <option value="Rework">Rework</option>
+                                    <option value="Query">Query</option>
+                                    <option value="Additional Work">Additional Work</option>
+                                    <option value="Completed">Completed</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label
+                                    style="display: block; margin-bottom: 0.5rem; color: var(--text-dim); font-size: 0.9rem;">Start
+                                    Date</label>
+                                <input type="date" id="projDate" required
+                                    style="width: 100%; padding: 0.8rem 1rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #fff; outline: none;">
+                            </div>
+                            <div class="form-group">
+                                <label
+                                    style="display: block; margin-bottom: 0.5rem; color: var(--text-dim); font-size: 0.9rem;">Deadline</label>
+                                <input type="date" id="projDeadline" required
+                                    style="width: 100%; padding: 0.8rem 1rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #fff; outline: none;">
+                            </div>
+                            <div class="form-group">
+                                <label
+                                    style="display: block; margin-bottom: 0.5rem; color: var(--text-dim); font-size: 0.9rem;">Assign
+                                    Responsible</label>
+                                <select id="projAssignee"
+                                    style="width: 100%; padding: 0.8rem 1rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #fff; outline: none; appearance: none;">
+                                    <!-- Rendered by JS -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions"
+                    style="margin-top: 3rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 1.5rem;">
+                    <button type="button" class="btn-secondary" onclick="TaskApp.closeCreateModal()"
+                        style="padding: 0.8rem 2rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #fff; font-weight: 500;">Cancel</button>
+                    <button type="submit" class="btn-primary"
+                        style="padding: 0.8rem 2rem; background: #6366f1; border: none; border-radius: 8px; color: #fff; font-weight: 600; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">Create
+                        Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="importModal" class="modal-overlay">
+        <div class="glass-panel modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Import Projects</h2>
+                <button class="close-modal" onclick="TaskApp.closeImportModal()">&times;</button>
+            </div>
+            <div style="padding: 1rem 0;">
+                <p style="color: var(--text-dim); margin-bottom: 1rem;">Upload a CSV file to add multiple projects at
+                    once. Download the sample template below to get started.</p>
+
+                <!-- Download Template Button -->
+                <div
+                    style="margin-bottom: 1.25rem; padding: 0.85rem 1rem; background: rgba(34,197,94,0.07); border: 1px solid rgba(34,197,94,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+                    <div>
+                        <div style="font-size: 0.85rem; color: #22c55e; font-weight: 600;"><i
+                                class="fa-solid fa-file-csv"></i> CSV Template</div>
+                        <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.15rem;">Columns: Number,
+                            Name, Date, Deadline, Color, Priority, AssignedToId, AssignedToName</div>
+                    </div>
+                    <button class="btn-secondary btn-sm" onclick="TaskApp.downloadImportTemplate()"
+                        style="white-space: nowrap; border-color: rgba(34,197,94,0.4); color: #22c55e;">
+                        <i class="fa-solid fa-download"></i> Download Template
+                    </button>
+                </div>
+
+                <div class="input-group">
+                    <label>Select CSV File</label>
+                    <input type="file" id="csvFileInput" accept=".csv" style="width: 100%;">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="TaskApp.closeImportModal()">Cancel</button>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button class="btn-primary" style="background: #10b981;" onclick="TaskApp.importCSV(false)">Import &
+                        Add</button>
+                    <button class="btn-primary" style="background: #ef4444;" onclick="TaskApp.importCSV(true)">Import &
+                        Overwrite</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Details Modal (Sites, Timeline, Comments) -->
+    <div class="modal-overlay" id="projectDetailsModal">
+        <div class="modal-content" style="max-width: 900px; height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header" style="margin-bottom: 0;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div id="detailColorTag" style="width: 15px; height: 15px; border-radius: 50%;"></div>
+                    <h2 id="detailProjName">Project Name</h2>
+                    <span class="badge" id="detailProjStatus">Status</span>
+                </div>
+                <button class="close-modal" onclick="TaskApp.closeDetailsModal()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Scrollable content area -->
+            <div style="flex: 1; overflow-y: auto; padding: 1.5rem 2rem;">
+                <div class="content-grid-responsive">
+                    <!-- Left Column: Details & Sites -->
+                    <div class="details-left">
+                        <div class="glass-panel" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+                            <h3 class="form-section-title"
+                                style="display: flex; justify-content: space-between; align-items: center;">
+                                Project Info
+                                <button id="editProjectBtn" class="btn-secondary btn-sm"
+                                    onclick="TaskApp.toggleEditProjectForm()" title="Edit Project"
+                                    style="font-size: 0.75rem;">
+                                    <i class="fa-solid fa-pen-to-square"></i> Edit
+                                </button>
+                            </h3>
+                            <div class="info-grid">
+                                <div><span class="text-dim">Number:</span> <span id="detailNumber"></span></div>
+                                <div><span class="text-dim">Client ID:</span> <span id="detailClientId" style="font-weight: 500; color: #fff;"></span></div>
+                                <div><span class="text-dim">Date:</span> <span id="detailDate"></span></div>
+                                <div>
+                                    <span class="text-dim">Deadline:</span>
+                                    <span id="detailDeadline"></span>
+                                    <span id="deadlineEditedTag"
+                                        style="display:none; margin-left: 0.4rem; font-size: 0.72rem; color: #f59e0b; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3); padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 600;">Edited</span>
+                                </div>
+                                <div>
+                                    <span class="text-dim">Priority:</span>
+                                    <span id="detailPriority"></span>
+                                    <span id="priorityEditedTag"
+                                        style="display:none; margin-left: 0.4rem; font-size: 0.72rem; color: #f59e0b; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3); padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 600;">Edited</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                    <span class="text-dim">Assigned To:</span>
+                                    <span id="detailAssignee"></span>
+                                    <span id="editAssigneeContainer"
+                                        style="display: none; align-items: center; gap: 0.5rem;">
+                                        <select id="editAssigneeSelect" class="form-input"
+                                            style="padding: 0.2rem; font-size: 0.8rem;"></select>
+                                        <button class="btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
+                                            onclick="TaskApp.saveAssignee()">Save</button>
+                                        <button class="btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;"
+                                            onclick="TaskApp.cancelEditAssignee()">Cancel</button>
+                                    </span>
+                                    <button id="editAssigneeBtn" class="btn-secondary"
+                                        style="padding: 0.1rem 0.4rem; font-size: 0.7rem;"
+                                        onclick="TaskApp.showEditAssignee()"><i class="fa-solid fa-pen"></i></button>
+                                </div>
+                                <div><span class="text-dim">Assigned By:</span> <span id="detailAssignedBy"></span>
+                                </div>
+                            </div>
+
+                            <!-- Edit Project Form (collapsible) -->
+                            <div id="editProjectForm"
+                                style="display: none; margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--glass-border);">
+                                <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 1rem;"><i
+                                        class="fa-solid fa-pen-to-square" style="color: #f59e0b;"></i> Edited fields
+                                    will be marked with a tag.</p>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                                    <div class="input-group">
+                                        <label>Project Number</label>
+                                        <input type="text" id="editProjNumber" placeholder="e.g. PRJ-001">
+                                    </div>
+                                    <div class="input-group" style="position: relative;">
+                                        <label>Client ID</label>
+                                        <div id="editClientSelectContainer" class="custom-select-container">
+                                            <input type="hidden" id="editProjClientId" required>
+                                            <div class="searchable-dropdown" id="editClientSelectBtn" onclick="TaskApp.toggleEditClientDropdown(event)" style="background: rgba(0, 0, 0, 0.2);">
+                                                <span id="editSelectedClientText">Select Client</span>
+                                                <i class="fa-solid fa-chevron-down" style="font-size: 0.8rem; color: var(--text-dim);"></i>
+                                            </div>
+                                            <div id="editClientDropdownMenu" class="glass-panel" style="display: none; position: absolute; top: calc(100% + 5px); left: 0; width: 100%; z-index: 999; padding: 0.75rem; background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.1);">
+                                                <div style="position: relative; margin-bottom: 0.75rem;">
+                                                    <i class="fa-solid fa-search" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 0.85rem;"></i>
+                                                    <input type="text" id="editClientSearchInput" placeholder="Search clients..." oninput="TaskApp.filterEditClientsDropdown()" style="width: 100%; padding: 0.5rem 0.5rem 0.5rem 2.25rem; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 0.85rem; outline: none;">
+                                                </div>
+                                                <div id="editClientOptionsList" class="search-options-list">
+                                                    <!-- JS populates -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Project Name</label>
+                                        <input type="text" id="editProjName" placeholder="Project name">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Start Date</label>
+                                        <input type="date" id="editProjDate">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Deadline</label>
+                                        <input type="date" id="editProjDeadline">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Priority</label>
+                                        <select id="editProjPriority">
+                                            <option value="Low">Low</option>
+                                            <option value="Medium">Medium</option>
+                                            <option value="High">High</option>
+                                            <option value="Critical">Critical</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Status</label>
+                                        <select id="editProjStatus">
+                                            <option value="Created">Created</option>
+                                            <option value="Planned">Planned</option>
+                                            <option value="In Progress">In Progress</option>
+                                            <option value="On Hold">On Hold</option>
+                                            <option value="Rework">Rework</option>
+                                            <option value="Query">Query</option>
+                                            <option value="Additional Work">Additional Work</option>
+                                            <option value="Completed">Completed</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Project Color</label>
+                                        <input type="color" id="editProjColor" style="height: 2.5rem;">
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 0.75rem; margin-top: 1rem; justify-content: flex-end;">
+                                    <button class="btn-secondary btn-sm"
+                                        onclick="TaskApp.cancelEditProject()">Cancel</button>
+                                    <button class="btn-primary btn-sm" onclick="TaskApp.saveProjectEdit()"><i
+                                            class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+                                </div>
+                            </div>
+
+                            <div class="timeline-update-section"
+                                style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--glass-border);">
+                                <label
+                                    style="display: block; margin-bottom: 0.5rem; color: var(--text-dim); font-size: 0.9rem;">Update
+                                    Timeline Status (Managers Only)</label>
+                                <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+                                    <select id="timelineSelect" style="flex: 1; min-width: 150px;"
+                                        onchange="TaskApp.onTimelineSelectChange()">
+                                        <option value="Created">Created</option>
+                                        <option value="Planned">Planned</option>
+                                        <option value="In Progress">In Progress</option>
+                                        <option value="On Hold">On Hold</option>
+                                        <option value="Rework">Rework</option>
+                                        <option value="Query">Query</option>
+                                        <option value="Additional Work">Additional Work</option>
+                                        <option value="Completed">Completed</option>
+                                    </select>
+                                    <button class="btn-secondary btn-sm"
+                                        onclick="TaskApp.updateTimeline()">Update</button>
+                                </div>
+                                <!-- Completion date/time - only shown when Completed is selected -->
+                                <div id="completionDateSection"
+                                    style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 8px;">
+                                    <label
+                                        style="display: block; margin-bottom: 0.5rem; color: #22c55e; font-size: 0.85rem;">
+                                        <i class="fa-solid fa-calendar-check"></i> Completion Date & Time
+                                    </label>
+                                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                                        <input type="datetime-local" id="completionDateTime"
+                                            style="flex: 1; min-width: 180px; border-color: rgba(34,197,94,0.3);">
+                                        <button class="btn-secondary btn-sm" onclick="TaskApp.setNowCompletionTime()"
+                                            style="white-space: nowrap;">
+                                            <i class="fa-solid fa-clock"></i> Set Now
+                                        </button>
+                                    </div>
+                                    <p style="font-size: 0.78rem; color: var(--text-dim); margin: 0.5rem 0 0 0;">Leave
+                                        blank to auto-fill current time when you click Update.</p>
+                                </div>
+                                <!-- Show existing completion date if set -->
+                                <div id="completionDateDisplay"
+                                    style="display: none; margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-dim);">
+                                    <i class="fa-solid fa-circle-check" style="color: #22c55e;"></i>
+                                    Completed on: <span id="completionDateText"
+                                        style="color: #22c55e; font-weight: 600;"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel" style="padding: 1.5rem;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <h3 class="form-section-title" style="margin: 0;">Project Sites</h3>
+                                <button class="btn-primary btn-sm" onclick="TaskApp.showAddSiteInput()"><i
+                                        class="fa-solid fa-plus"></i> Add Site</button>
+                            </div>
+
+                            <div id="addSiteContainer"
+                                style="display: none; margin-bottom: 1rem; gap: 0.5rem; align-items: center;">
+                                <input type="text" id="newSiteName" placeholder="Enter site name/location"
+                                    style="flex: 1;">
+                                <button class="btn-primary btn-sm" onclick="TaskApp.addSite()">Save</button>
+                                <button class="btn-secondary btn-sm"
+                                    onclick="TaskApp.hideAddSiteInput()">Cancel</button>
+                            </div>
+
+                            <div class="sites-list" id="sitesList">
+                                <!-- Sites rendered here -->
+                            </div>
+                        </div>
+
+                        <!-- New Subtasks Section -->
+                        <div class="glass-panel" style="padding: 1.5rem;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <h3 class="form-section-title" style="margin: 0;">Project Tasks</h3>
+                            </div>
+
+                            <form id="addSubtaskForm" style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                                <input type="text" id="newSubtaskName" class="form-input"
+                                    placeholder="Add a new task..." required style="flex: 1;">
+                                <button type="submit" class="btn-primary btn-sm"><i
+                                        class="fa-solid fa-plus"></i></button>
+                            </form>
+
+                            <div class="subtasks-list" id="subtasksList"
+                                style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <!-- Subtasks rendered here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Comments feed -->
+                    <div class="details-right">
+                        <div class="glass-panel comment-section"
+                            style="padding: 1.5rem; height: 100%; display: flex; flex-direction: column;">
+                            <h3 class="form-section-title">Comments</h3>
+
+                            <div class="comments-feed" id="commentsFeed"
+                                style="flex: 1; overflow-y: auto; margin-bottom: 1rem; padding-right: 0.5rem; max-height: 400px; display: flex; flex-direction: column; gap: 1rem;">
+                                <!-- Comments rendered here -->
+                            </div>
+
+                            <div class="comment-input-area"
+                                style="margin-top: auto; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+                                <textarea id="newCommentText" placeholder="Add a comment..." rows="3"
+                                    style="width: 100%; margin-bottom: 0.5rem; resize: none;"></textarea>
+                                <div style="text-align: right;">
+                                    <button class="btn-primary btn-sm" onclick="TaskApp.addComment()">
+                                        <i class="fa-solid fa-paper-plane"></i> Post Comment
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALS: Moved before scripts to ensure availability during initialization -->
+
+    <!-- Add Tag Modal -->
+    <div class="modal-overlay" id="addTagModal">
+        <div class="modal-content" style="max-width: 400px; padding: 0; overflow: hidden; border-radius: 12px; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1);">
+            <div class="modal-header" style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                <h2 style="font-size: 1.1rem; font-weight: 600; color: #fff; margin: 0;">Add New Tag</h2>
+                <button class="close-modal" onclick="TaskApp.closeAddTagModal()" style="width: 28px; height: 28px; border-radius: 50%; background: rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center; border: none; color: #fff; cursor: pointer;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="addTagForm" style="padding: 1.5rem;">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-dim);">Tag Name</label>
+                    <input type="text" id="newTagName" required placeholder="Project Management" autocomplete="off" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 0.75rem; color: #fff; font-size: 0.9rem;">
+                </div>
+                <div class="form-group">
+                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-dim);">Tag Color</label>
+                    <input type="color" id="newTagColor" value="#6366f1" style="width: 100%; height: 40px; background: none; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; cursor: pointer; padding: 2px;">
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="button" class="btn-secondary" onclick="TaskApp.closeAddTagModal()" style="flex: 1;">Cancel</button>
+                    <button type="submit" class="btn-primary" style="flex: 1;">Save Tag</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Success Modal -->
+    <div id="successModal" class="modal-overlay">
+        <div class="glass-panel modal-content" style="max-width: 400px; text-align: center; padding: 3rem 2rem;">
+            <div class="success-icon" style="width: 80px; height: 80px; background: rgba(34, 197, 94, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: #22c55e; font-size: 2.5rem;">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <h2 id="successTitle" style="color: #fff; margin-bottom: 0.5rem; margin-top: 0;">Success!</h2>
+            <p id="successMsg" style="color: var(--text-dim); margin-bottom: 2rem;">Operation completed successfully.</p>
+            <button onclick="document.getElementById('successModal').classList.remove('active'); setTimeout(()=>{document.getElementById('successModal').style.display='none';}, 300);" class="btn-primary" style="width: 100%;">Continue</button>
+        </div>
+    </div>
+
+    <!-- Add Client Modal -->
+    <div class="modal-overlay" id="addClientModal">
+        <div class="modal-content" style="max-width: 400px; padding: 0; overflow: hidden; border-radius: 12px; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1);">
+            <div class="modal-header" style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                <h2 style="font-size: 1.1rem; font-weight: 600; color: #fff; margin: 0;">Add New Client</h2>
+                <button class="close-modal" onclick="TaskApp.closeAddClientModal()" style="width: 28px; height: 28px; border-radius: 50%; background: rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center; border: none; color: #fff; cursor: pointer;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="addClientForm" style="padding: 1.5rem;">
+                <div class="form-group">
+                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-dim);">Client ID (e.g., MS01)</label>
+                    <input type="text" id="newClientId" required placeholder="Enter Client ID" autocomplete="off" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 0.75rem; color: #fff; font-size: 0.9rem;">
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="button" class="btn-secondary" onclick="TaskApp.closeAddClientModal()" style="flex: 1;">Cancel</button>
+                    <button type="submit" class="btn-primary" style="flex: 1;">Save Client</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal-content" style="max-width: 350px; padding: 1.5rem; text-align: center; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;">
+            <div style="font-size: 2rem; color: #ef4444; margin-bottom: 1rem;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <h3 id="confirmTitle" style="margin-bottom: 0.5rem; font-size: 1.1rem; color: #fff;">Confirm Action</h3>
+            <p id="confirmMessage" style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1.5rem;">Are you sure you want to proceed?</p>
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn-secondary" onclick="TaskApp.closeConfirm()" style="flex: 1;">Cancel</button>
+                <button class="btn-primary" id="confirmOkBtn" style="flex: 1; background: #ef4444; border-color: #ef4444;">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/render-logic.js"></script>
+    <script src="js/task-logic.js?v=1.0.2"></script>
+    <script src="script.js?v=2"></script>
+    <script src="js/mobile-nav.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,3751 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer - Gravity HR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .summary-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            /* Increased gap */
+            margin-bottom: 2rem;
+            align-items: flex-start;
+            width: 100%;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex: 1;
+            min-width: 250px;
+            /* Increased min-width */
+            position: relative;
+            /* Ensure relative for children select/dropdowns */
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-dim);
+            margin-bottom: 0.2rem;
+        }
+
+        /* Custom Searchable Dropdown Styles */
+        .custom-select-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .custom-select-trigger {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 0.6rem 1rem;
+            color: var(--text-main);
+            height: 42px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .custom-select-trigger:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .search-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            width: 100%;
+            min-width: 280px;
+            background: rgba(15, 23, 42, 0.95) !important;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            padding: 0.75rem;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+        }
+
+        .search-input-wrapper i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        .search-input-wrapper input {
+            width: 100%;
+            padding: 0.6rem 1rem 0.6rem 2.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .search-input-wrapper input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .search-options-list {
+            max-height: 250px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding-right: 4px;
+        }
+
+        .search-options-list::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .search-options-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        .search-option {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0.75rem;
+            border-radius: 6px;
+            color: #e2e8f0;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .search-option:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        .search-option.selected {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary-color);
+        }
+
+        .search-option .project-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .search-option .option-main {
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .search-option .option-sub {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .search-dropdown-header {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.25rem 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 992px) {
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .project-totals-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .project-totals-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .total-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Force visibility when active */
+        #dateRangeModal.active {
+            display: flex !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        /* Custom Calendar Styles */
+        .calendar-container {
+            user-select: none;
+            color: #fff;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .calendar-header h2 {
+            font-size: 1.5rem;
+            color: #ff3366;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 0;
+        }
+
+        .calendar-nav-btn {
+            background: transparent;
+            border: none;
+            color: #ff3366;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            transition: transform 0.2s;
+        }
+
+        .calendar-nav-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            text-align: center;
+        }
+
+        .calendar-day-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #94a3b8;
+            padding-bottom: 10px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .calendar-day.empty {
+            cursor: default;
+        }
+
+        .calendar-day:not(.empty):hover {
+            background: rgba(255, 51, 102, 0.1);
+        }
+
+        .calendar-day.selected {
+            background: #ff3366 !important;
+            color: #fff !important;
+            box-shadow: 0 0 15px rgba(255, 51, 102, 0.5);
+        }
+
+        .calendar-day.in-range {
+            background: rgba(255, 51, 102, 0.2);
+        }
+
+        .calendar-day.today {
+            border: 2px solid #ff3366;
+        }
+
+        .calendar-footer {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 2rem;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            padding: 0 1.5rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* Dual Calendar & Sidebar Styles */
+        .date-picker-layout {
+            display: flex;
+            background: #1a1b3a;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .quick-select-sidebar {
+            width: 180px;
+            background: rgba(0, 0, 0, 0.2);
+            border-right: 1px solid var(--glass-border);
+            padding: 1rem 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .quick-select-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-color);
+            text-align: left;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-select-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .quick-select-btn.active {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 500;
+        }
+
+        .calendar-area {
+            flex-grow: 1;
+            padding: 1.5rem 0;
+        }
+
+        .dual-calendars {
+            display: flex;
+            gap: 2rem;
+            padding: 0 1.5rem;
+        }
+
+        .single-calendar {
+            flex: 1;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding: 0 1.5rem;
+        }
+
+        .calendar-header h2 {
+            font-size: 1.1rem;
+            color: #fff;
+            margin: 0;
+            text-align: center;
+            flex-grow: 1;
+            text-transform: capitalize;
+            letter-spacing: normal;
+        }
+
+        /* Dark Glass Horizontal UI Styles */
+        #timerContainer {
+            padding: 1.5rem 0;
+        }
+
+        .week-total-container {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 0 1rem;
+        }
+
+        .week-total-label {
+            color: var(--text-dim);
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .week-total-value {
+            color: var(--text-main);
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: 'Inter', monospace;
+        }
+
+        /* Action Menu Styles */
+        .action-menu-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .btn-action-trigger {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            padding: 5px 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .btn-action-trigger:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .action-dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            width: 150px;
+            z-index: 1001;
+            padding: 5px;
+            border: 1px solid var(--dropdown-border);
+            background: var(--dropdown-bg) !important;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(15px);
+        }
+
+        .action-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            color: var(--text-color);
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .action-item:hover {
+            background: var(--dropdown-hover);
+        }
+
+        .action-item.delete {
+            color: #ff4d4d;
+        }
+
+        .action-item i {
+            width: 14px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .timer-input-bar {
+            display: flex;
+            align-items: flex-end;
+            gap: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 100;
+        }
+
+        .timer-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .timer-field label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-dim);
+            padding-left: 0.25rem;
+        }
+
+        .timer-field input,
+        .timer-field select,
+        .timer-field .searchable-dropdown {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 0.65rem 0.85rem;
+            color: var(--text-main);
+            width: 100%;
+            height: 42px;
+            font-size: 0.95rem;
+        }
+
+        .timer-field input:focus {
+            border-color: var(--primary-color);
+            background: rgba(255, 255, 255, 0.08);
+            outline: none;
+        }
+
+        .timer-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .timer-btn {
+            height: 42px;
+            padding: 0 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .timer-btn.start {
+            background: #008cd1;
+            color: white;
+        }
+
+        .timer-btn.start:hover {
+            background: #0077b2;
+            transform: translateY(-1px);
+        }
+
+        .timer-btn.stop {
+            background: #ef4444;
+            color: white;
+        }
+
+        .timer-btn.add {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border: 1px solid var(--glass-border);
+        }
+
+        .timer-btn.add:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Log Rendering Styles (Glass Panels) */
+        .log-day-panel {
+            margin-bottom: 2rem;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .log-day-header {
+            padding: 1.25rem 1.75rem;
+            background: rgba(59, 130, 246, 0.05);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .log-day-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-main);
+        }
+
+        .log-day-header h3 i {
+            color: var(--primary-color);
+        }
+
+        .log-day-total {
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 1rem;
+        }
+
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .log-table th {
+            padding: 1rem 1.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-align: left;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .log-table td {
+            padding: 1rem 1.5rem;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .log-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .log-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Project Info Wrapper */
+        .project-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .project-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .btn-delete {
+            color: var(--text-dim);
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-delete:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        /* Timer Tabs Refactoring (Match Leave Master Style) */
+        .tab-nav-simple {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .tab-nav-simple .tab-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+
+        .tab-nav-simple .tab-btn.active {
+            background: var(--primary-gradient, linear-gradient(135deg, var(--primary-color), var(--secondary-color)));
+            color: white;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        /* Override style.css underline effect */
+        .tab-nav-simple .tab-btn.active::after {
+            display: none !important;
+        }
+
+        .tab-nav-simple .tab-btn:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--glass-border);
+        }
+    
+        /* --- Timer/Manual Entry Mode Toggle --- */
+        .manual-mode-only { display: none !important; }
+        .timer-mode .manual-mode-only { display: none !important; }
+        
+        .manual-mode .manual-mode-only { 
+            display: block !important; 
+        }
+        .manual-mode button.manual-mode-only {
+            display: flex !important;
+        }
+        
+        .manual-mode .timer-mode-only { display: none !important; }
+
+        .mode-icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 4px;
+            font-size: 1.1rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mode-icon-btn:hover {
+            color: var(--primary-color);
+            background: rgba(59, 130, 246, 0.1);
+        }
+        .mode-icon-btn.active {
+            color: var(--primary-color);
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid var(--primary-color);
+        }
+        .mode-toggle-group {
+            display: flex; 
+            flex-direction: column; 
+            gap: 4px; 
+            margin-left: 10px; 
+            border-left: 1px solid var(--glass-border); 
+            padding-left: 10px;
+        }
+
+    </style>
+</head>
+
+<body data-page="timer">
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="app-layout">
+        <!-- SIDEBAR -->
+        <aside class="sidebar glass-panel">
+            <div class="brand">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>Gravity HR</span>
+            </div>
+            <nav class="nav-links">
+                <!-- Dynamically rendered by JS -->
+            </nav>
+            <div style="margin-top: auto; padding: 1rem 1.5rem;">
+                <button id="themeToggle" class="btn-secondary btn-sm"
+                    style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--input-bg);">
+                    <i class="fa-solid fa-moon"></i>
+                    <span>Dark Mode</span>
+                </button>
+                <button onclick="Auth.logout()" class="btn-secondary btn-sm"
+                    style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--input-bg); margin-top: 10px;">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+            <a href="user.html" class="user-profile" style="text-decoration: none; color: inherit; cursor: pointer;">
+                <div class="avatar">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="user-info">
+                    <span class="name" id="sidebarUserName">User</span>
+                    <span class="role" id="sidebarUserRole">Role</span>
+                </div>
+            </a>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="main-content">
+            <header class="section-header">
+                <div>
+                    <h1>Time Tracker</h1>
+                    <p>Monitor billable hours and task duration</p>
+                </div>
+            </header>
+
+            <!-- TABS -->
+            <div class="glass-panel" style="padding: 1rem; margin-bottom: 2rem;">
+                <div class="tab-nav-simple">
+                    <button class="tab-btn active" data-tab="timer" onclick="TimerApp.switchTab('timer')">
+                        <i class="fa-solid fa-clock"></i> Timer
+                    </button>
+                    <button class="tab-btn" data-tab="summary" onclick="TimerApp.switchTab('summary')">
+                        <i class="fa-solid fa-chart-pie"></i> Summary
+                    </button>
+                    <button class="tab-btn" data-tab="report" onclick="TimerApp.switchTab('report')">
+                        <i class="fa-solid fa-file-lines"></i> Report
+                    </button>
+                </div>
+            </div>
+
+            <!-- TIMER VIEW -->
+            <div id="timerContainer" class="timer-mode">
+                <!-- Timer Input Bar -->
+                <div class="timer-input-bar">
+                    <div class="timer-field" style="flex: 2;">
+                        <label>Description</label>
+                        <input type="text" id="logDescription" placeholder="What are you working on? (Optional)">
+                    </div>
+
+                    
+
+                    <div class="timer-field">
+                        <label>Project</label>
+                        <div id="projectSelectContainer" class="custom-select-container" style="position: relative;">
+                            <input type="hidden" id="logProject" onchange="TimerApp.onProjectChange()">
+                            <div class="searchable-dropdown" id="projectSelectBtn"
+                                onclick="TimerApp.toggleProjectDropdown(event)"
+                                style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                                <span id="selectedProjectText">Select Project</span>
+                                <i class="fa-solid fa-chevron-down"
+                                    style="font-size: 0.8rem; color: var(--text-dim);"></i>
+                            </div>
+
+                            <!-- Dropdown Menu -->
+                            <div id="projectDropdownMenu" class="glass-panel"
+                                style="display: none; position: absolute; top: calc(100% + 10px); left: 0; width: 320px; z-index: 999; padding: 0.75rem; background: var(--dropdown-bg) !important; border: 1px solid var(--dropdown-border);">
+                                <div style="position: relative; margin-bottom: 0.75rem;">
+                                    <i class="fa-solid fa-search"
+                                        style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 0.85rem;"></i>
+                                    <input type="text" id="projectSearchInput" placeholder="Search projects..."
+                                        oninput="TimerApp.filterProjects()"
+                                        style="width: 100%; padding: 0.5rem 0.5rem 0.5rem 2.25rem; border-radius: 6px; background: var(--dropdown-search-bg); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.85rem;">
+                                </div>
+                                <div id="projectOptionsList"
+                                    style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;">
+                                    <!-- Options injected here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+
+                    <div class="timer-field">
+                        <label>Tags</label>
+                        <div id="tagSelectContainer" class="custom-select-container" style="position: relative;">
+                            <input type="hidden" id="logTags">
+                            <div class="searchable-dropdown" id="tagSelectBtn"
+                                onclick="TimerApp.toggleTagDropdown(event)"
+                                style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                                <span id="selectedTagText">Select Tags</span>
+                                <i class="fa-solid fa-chevron-down"
+                                    style="font-size: 0.8rem; color: var(--text-dim);"></i>
+                            </div>
+                            <div id="tagDropdownMenu" class="glass-panel"
+                                style="display: none; position: absolute; top: calc(100% + 10px); left: 0; width: 280px; z-index: 999; padding: 0.75rem; background: var(--dropdown-bg) !important; border: 1px solid var(--dropdown-border);">
+                                <div style="position: relative; margin-bottom: 0.75rem;">
+                                    <i class="fa-solid fa-search"
+                                        style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 0.85rem;"></i>
+                                    <input type="text" id="tagSearchInput" placeholder="Search tags..."
+                                        oninput="TimerApp.filterTags()"
+                                        style="width: 100%; padding: 0.5rem 0.5rem 0.5rem 2.25rem; border-radius: 6px; background: var(--dropdown-search-bg); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.85rem;">
+                                </div>
+                                <div id="tagOptionsList"
+                                    style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;">
+                                    <!-- Tags injected here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timer-field manual-mode-only" style="min-width: 140px;">
+                        <label>Date</label>
+                        <input type="date" id="logDate">
+                    </div>
+
+                    <div class="timer-field manual-mode-only" style="min-width: 80px;">
+                        <label>Start</label>
+                        <input type="text" id="logStartTime" placeholder="HH:MM" onchange="TimerApp.manualTimeChange('start')" style="text-align: center;">
+                    </div>
+
+                    <div class="timer-field manual-mode-only" style="min-width: 80px;">
+                        <label>End</label>
+                        <input type="text" id="logEndTime" placeholder="HH:MM" onchange="TimerApp.manualTimeChange('end')" style="text-align: center;">
+                    </div>
+
+                    <div class="timer-field" style="min-width: 80px;">
+                        <label>Duration</label>
+                        <input type="text" id="logManualDuration" placeholder="--:--" readonly style="text-align: center; border: 1px dashed var(--glass-border); background: transparent; font-weight: bold; font-family: monospace; color: var(--primary-color);">
+                    </div>
+
+                    <div class="timer-actions">
+                        <!-- Timer Mode Button -->
+                        <button id="toggleTimerBtn" class="timer-btn start timer-mode-only" onclick="TimerApp.toggleTimer()">
+                            <i class="fa-solid fa-play"></i> Start
+                        </button>
+                        
+                        <!-- Manual Mode Button -->
+                        <button class="timer-btn add manual-mode-only" onclick="TimerApp.addManualLog()">
+                            <i class="fa-solid fa-plus"></i> Add
+                        </button>
+
+                        <!-- Entry Mode Toggles -->
+                        <div class="mode-toggle-group">
+                            <button id="modeTimerBtn" class="mode-icon-btn active" onclick="TimerApp.switchEntryMode('timer')" title="Timer Mode">
+                                <i class="fa-regular fa-clock" style="font-size: 1.1rem;"></i>
+                            </button>
+                            <button id="modeManualBtn" class="mode-icon-btn" onclick="TimerApp.switchEntryMode('manual')" title="Manual Mode">
+                                <i class="fa-solid fa-list-ul" style="font-size: 1.1rem;"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="runningTimeDisplay" style="display: none;">00:00:00</div>
+
+                <!-- Logged Data Area -->
+                <div id="logsContainer">
+                </div>
+            </div> <!-- End Timer Container -->
+
+
+
+            <!-- SUMMARY VIEW -->
+            <div id="summaryContainer" style="display: none;">
+                <div class="glass-panel" style="padding: 1.5rem; margin-bottom: 2rem;">
+                    <div class="summary-filters">
+                        <div class="input-group">
+                            <label>Search</label>
+                            <input type="text" id="summarySearch" placeholder="Search tasks..."
+                                oninput="TimerApp.updateSummary()">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Project</label>
+                            <input type="hidden" id="summaryProjectFilter" value="">
+                            <div class="custom-select-container">
+                                <div class="custom-select-trigger" onclick="TimerApp.toggleSearchDropdown(event, 'summaryProjectDropdownMenu', 'summaryProjectSearchInput')">
+                                    <span id="selectedSummaryProjectText">All Projects</span>
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </div>
+                                <div id="summaryProjectDropdownMenu" class="search-dropdown">
+                                    <div class="search-input-wrapper">
+                                        <i class="fa-solid fa-search"></i>
+                                        <input type="text" id="summaryProjectSearchInput" placeholder="Search projects..."
+                                            oninput="TimerApp.filterSearchDropdown(this.value, 'summaryProjectOptionsList', 'project', 'summary')">
+                                    </div>
+                                    <div id="summaryProjectOptionsList" class="search-options-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Employee</label>
+                            <input type="hidden" id="summaryEmployeeFilter" value="">
+                            <div class="custom-select-container">
+                                <div class="custom-select-trigger" onclick="TimerApp.toggleSearchDropdown(event, 'summaryEmployeeDropdownMenu', 'summaryEmployeeSearchInput')">
+                                    <span id="selectedSummaryEmployeeText">All Employees</span>
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </div>
+                                <div id="summaryEmployeeDropdownMenu" class="search-dropdown">
+                                    <div class="search-input-wrapper">
+                                        <i class="fa-solid fa-search"></i>
+                                        <input type="text" id="summaryEmployeeSearchInput" placeholder="Search employees..."
+                                            oninput="TimerApp.filterSearchDropdown(this.value, 'summaryEmployeeOptionsList', 'employee', 'summary')">
+                                    </div>
+                                    <div id="summaryEmployeeOptionsList" class="search-options-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Tag</label>
+                            <input type="hidden" id="summaryTagFilter" value="">
+                            <div class="custom-select-container">
+                                <div class="custom-select-trigger" onclick="TimerApp.toggleSearchDropdown(event, 'summaryTagDropdownMenu', 'summaryTagSearchInput')">
+                                    <span id="selectedSummaryTagText">All Tags</span>
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </div>
+                                <div id="summaryTagDropdownMenu" class="search-dropdown">
+                                    <div class="search-input-wrapper">
+                                        <i class="fa-solid fa-search"></i>
+                                        <input type="text" id="summaryTagSearchInput" placeholder="Search tags..."
+                                            oninput="TimerApp.filterSearchDropdown(this.value, 'summaryTagOptionsList', 'tag', 'summary')">
+                                    </div>
+                                    <div id="summaryTagOptionsList" class="search-options-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group date-range-picker">
+                            <label>Date Range</label>
+                            <div id="dateRangeDisplay" class="glass-input"
+                                style="padding: 0.6rem 1rem; height: 42px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-main);">
+                                <span id="selectedDateRangeText">Select range...</span>
+                                <i class="fa-solid fa-calendar-days" onclick="TimerApp.openDateRangePicker(event)"
+                                    style="color: var(--primary-color); cursor: pointer; padding: 5px;"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPIs Section -->
+                    <div class="kpi-grid"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                        <div class="glass-panel"
+                            style="padding: 1.5rem; text-align: center; background: rgba(0,0,0,0.2);">
+                            <h4
+                                style="margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-dim); text-transform: uppercase;">
+                                Total Time</h4>
+                            <div id="kpiTotalTime" style="font-size: 2rem; font-weight: 700; color: #06b6d4;">00:00:00
+                            </div>
+                        </div>
+                        <div class="glass-panel"
+                            style="padding: 1.5rem; text-align: center; background: rgba(0,0,0,0.2);">
+                            <h4
+                                style="margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-dim); text-transform: uppercase;">
+                                Top Project</h4>
+                            <div id="kpiTopProject"
+                                style="font-size: 1.5rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                -</div>
+                        </div>
+                    </div>
+
+                    <!-- Work Hours Overview (Full Width) -->
+                    <div class="glass-panel" style="padding: 1rem; background: rgba(0,0,0,0.2); margin-bottom: 1.5rem;">
+                        <h4
+                            style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-dim); text-transform: uppercase;">
+                            Work Hours Overview</h4>
+                        <div style="height: 300px;">
+                            <canvas id="summaryBarChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Section: Doughnut & Project Totals -->
+                    <div class="chart-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <!-- Project Wise Doughnut -->
+                        <div class="glass-panel" style="padding: 1rem; background: rgba(0,0,0,0.2);">
+                            <h4
+                                style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-dim); text-transform: uppercase;">
+                                Project Wise</h4>
+                            <div style="height: 300px; display: flex; justify-content: center;">
+                                <div style="width: 100%; max-width: 300px;">
+                                    <canvas id="summaryDoughnutChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Project Totals List -->
+                        <div class="glass-panel"
+                            style="padding: 1rem; background: rgba(0,0,0,0.2); display: flex; flex-direction: column;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <h4
+                                    style="margin: 0; color: var(--text-dim); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.05em;">
+                                    Most Tracked Activities</h4>
+                                <span style="font-size: 0.75rem; color: var(--text-dim);">Top 10</span>
+                            </div>
+                            <div id="projectTotalsContainer" class="project-totals-list"
+                                style="flex-grow: 1; overflow-y: auto; max-height: 300px; display: flex; flex-direction: column; gap: 0.5rem; padding-right: 0.5rem;">
+                                <!-- Project-wise totals here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REPORT VIEW -->
+            <div id="reportContainer" style="display: none;">
+                <div class="glass-panel" style="padding: 1.5rem; margin-bottom: 2rem;">
+                    <div class="summary-filters">
+                        <div class="input-group">
+                            <label>Search</label>
+                            <input type="text" id="reportSearch" placeholder="Search tasks..."
+                                oninput="TimerApp.updateReport()">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Project</label>
+                            <input type="hidden" id="reportProjectFilter" value="">
+                            <div class="custom-select-container">
+                                <div class="custom-select-trigger" onclick="TimerApp.toggleSearchDropdown(event, 'reportProjectDropdownMenu', 'reportProjectSearchInput')">
+                                    <span id="selectedReportProjectText">All Projects</span>
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </div>
+                                <div id="reportProjectDropdownMenu" class="search-dropdown">
+                                    <div class="search-input-wrapper">
+                                        <i class="fa-solid fa-search"></i>
+                                        <input type="text" id="reportProjectSearchInput" placeholder="Search projects..."
+                                            oninput="TimerApp.filterSearchDropdown(this.value, 'reportProjectOptionsList', 'project', 'report')">
+                                    </div>
+                                    <div id="reportProjectOptionsList" class="search-options-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Employee</label>
+                            <input type="hidden" id="reportEmployeeFilter" value="">
+                            <div class="custom-select-container">
+                                <div class="custom-select-trigger" onclick="TimerApp.toggleSearchDropdown(event, 'reportEmployeeDropdownMenu', 'reportEmployeeSearchInput')">
+                                    <span id="selectedReportEmployeeText">All Employees</span>
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </div>
+                                <div id="reportEmployeeDropdownMenu" class="search-dropdown">
+                                    <div class="search-input-wrapper">
+                                        <i class="fa-solid fa-search"></i>
+                                        <input type="text" id="reportEmployeeSearchInput" placeholder="Search employees..."
+                                            oninput="TimerApp.filterSearchDropdown(this.value, 'reportEmployeeOptionsList', 'employee', 'report')">
+                                    </div>
+                                    <div id="reportEmployeeOptionsList" class="search-options-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Tag</label>
+                            <input type="hidden" id="reportTagFilter" value="">
+                            <div class="custom-select-container">
+                                <div class="custom-select-trigger" onclick="TimerApp.toggleSearchDropdown(event, 'reportTagDropdownMenu', 'reportTagSearchInput')">
+                                    <span id="selectedReportTagText">All Tags</span>
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </div>
+                                <div id="reportTagDropdownMenu" class="search-dropdown">
+                                    <div class="search-input-wrapper">
+                                        <i class="fa-solid fa-search"></i>
+                                        <input type="text" id="reportTagSearchInput" placeholder="Search tags..."
+                                            oninput="TimerApp.filterSearchDropdown(this.value, 'reportTagOptionsList', 'tag', 'report')">
+                                    </div>
+                                    <div id="reportTagOptionsList" class="search-options-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group" style="flex: 1; max-width: 150px;">
+                            <button class="timer-btn add" onclick="TimerApp.exportReportCSV()"
+                                style="height: 42px; width: 100%; padding: 0 1rem; margin-top: auto; white-space: nowrap;">
+                                <i class="fa-solid fa-file-csv"></i> Export CSV
+                            </button>
+                        </div>
+                        <div class="input-group date-range-picker">
+                            <label>Date Range</label>
+                            <div id="reportDateRangeDisplay" class="glass-input"
+                                style="padding: 0.6rem 1rem; height: 42px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-main);">
+                                <span id="reportDateRangeText">Select range...</span>
+                                <i class="fa-solid fa-calendar-days" onclick="TimerApp.openDateRangePicker(event)"
+                                    style="color: var(--primary-color); cursor: pointer; padding: 5px;"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Report Table -->
+                    <div class="glass-panel table-container" style="padding: 0;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th onclick="TimerApp.handleReportSort('userName')" style="cursor: pointer;">
+                                        Employee <i class="fa-solid fa-sort"
+                                            style="margin-left: 5px; opacity: 0.3;"></i></th>
+                                    
+                                    <th onclick="TimerApp.handleReportSort('description')" style="cursor: pointer;">
+                                        Description <i class="fa-solid fa-sort"
+                                            style="margin-left: 5px; opacity: 0.3;"></i></th>
+                                    <th onclick="TimerApp.handleReportSort('projectName')" style="cursor: pointer;">
+                                        Project <i class="fa-solid fa-sort" style="margin-left: 5px; opacity: 0.3;"></i>
+                                    </th>
+                                    <th onclick="TimerApp.handleReportSort('tags')" style="cursor: pointer;">
+                                        Tags <i class="fa-solid fa-sort" style="margin-left: 5px; opacity: 0.3;"></i>
+                                    </th>
+                                    
+                                    <th onclick="TimerApp.handleReportSort('date')" style="cursor: pointer;">Date <i
+                                            class="fa-solid fa-sort" style="margin-left: 5px; opacity: 0.3;"></i></th>
+                                    <th onclick="TimerApp.handleReportSort('startTime')" style="cursor: pointer;">Start
+                                        <i class="fa-solid fa-sort" style="margin-left: 5px; opacity: 0.3;"></i>
+                                    </th>
+                                    <th onclick="TimerApp.handleReportSort('endTime')" style="cursor: pointer;">End <i
+                                            class="fa-solid fa-sort" style="margin-left: 5px; opacity: 0.3;"></i></th>
+                                    <th onclick="TimerApp.handleReportSort('durationMs')"
+                                        style="cursor: pointer; text-align: right;">Duration <i class="fa-solid fa-sort"
+                                            style="margin-left: 5px; opacity: 0.3;"></i></th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportTableBody">
+                                <!-- Report rows will be injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Date Range Modal -->
+            <div id="dateRangeModal" class="modal-overlay" style="display: none;">
+                <div class="date-picker-layout">
+                    <!-- Quick Select Sidebar -->
+                    <div class="quick-select-sidebar">
+                        <button class="quick-select-btn" onclick="TimerApp.setQuickRange('today')">Today</button>
+                        <button class="quick-select-btn"
+                            onclick="TimerApp.setQuickRange('yesterday')">Yesterday</button>
+                        <button class="quick-select-btn" onclick="TimerApp.setQuickRange('this_week')">This
+                            week</button>
+                        <button class="quick-select-btn" onclick="TimerApp.setQuickRange('last_week')">Last
+                            week</button>
+                        <button class="quick-select-btn" onclick="TimerApp.setQuickRange('this_month')">This
+                            month</button>
+                        <button class="quick-select-btn active" onclick="TimerApp.setQuickRange('last_month')">Last
+                            month</button>
+                        <button class="quick-select-btn" onclick="TimerApp.setQuickRange('this_year')">This
+                            year</button>
+                        <button class="quick-select-btn" onclick="TimerApp.setQuickRange('last_year')">Last
+                            year</button>
+                    </div>
+
+                    <!-- Calendars Area -->
+                    <div class="calendar-area">
+                        <div class="calendar-header">
+                            <button class="calendar-nav-btn" onclick="TimerApp.prevMonth()" style="font-size: 1rem;"><i
+                                    class="fa-solid fa-chevron-left"></i></button>
+                            <h2 id="calendarMonthYearLeft"
+                                style="text-align: center; display: inline-block; width: 45%;">Feb 2026</h2>
+                            <h2 id="calendarMonthYearRight"
+                                style="text-align: center; display: inline-block; width: 45%;">Mar 2026</h2>
+                            <button class="calendar-nav-btn" onclick="TimerApp.nextMonth()" style="font-size: 1rem;"><i
+                                    class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+
+                        <div class="dual-calendars">
+                            <!-- Left Calendar -->
+                            <div class="single-calendar">
+                                <div class="calendar-grid" id="calendarGridLeft">
+                                    <!-- JS will inject days -->
+                                </div>
+                            </div>
+                            <!-- Right Calendar -->
+                            <div class="single-calendar">
+                                <div class="calendar-grid" id="calendarGridRight">
+                                    <!-- JS will inject days -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="calendar-footer">
+                            <div class="legend-item"><span class="legend-dot" style="background: #ff3366;"></span>
+                                Active Range</div>
+                        </div>
+
+                        <div class="modal-actions"
+                            style="margin-top: 1.5rem; padding: 0 1.5rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
+                            <button class="btn-secondary" onclick="TimerApp.closeDateRangePicker()"
+                                style="background: rgba(255,255,255,0.05); color: #fff;">Cancel</button>
+                            <button class="btn-primary" onclick="TimerApp.applyDateRange()"
+                                style="background: #6366f1;">Apply Range</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <style>
+        .editable {
+            cursor: pointer;
+            transition: background 0.2s;
+            position: relative;
+        }
+
+        .editable:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .editable::after {
+            content: '\f303';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .editable:hover::after {
+            opacity: 0.5;
+        }
+
+        tr.editing {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .inline-edit-input:focus {
+            outline: none;
+            border-color: var(--primary-color) !important;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .custom-select-container {
+            position: relative;
+            width: 100%;
+        }
+    </style>
+    <div id="editLogModal" style="display:none;"></div> <!-- Redundant, keeping for safety but can be removed later -->
+
+    <script src="js/data.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/render-logic.js"></script>
+    <script>
+        const TimerApp = {
+            logs: [],
+            projects: [],
+            timerInterval: null,
+            startTime: null,
+            running: false,
+            currentUser: null,
+            editLogId: null,
+            timerTab: 'timer',
+            summaryStartDate: null,
+            summaryEndDate: null,
+            summaryCharts: {},
+            activeProjects: [],
+            reportSortBy: 'date',
+            reportSortOrder: 'desc',
+            searchableData: {
+                summary: { clients: [], projects: [], employees: [] },
+                report: { clients: [], projects: [], employees: [] }
+            },
+
+            formatTextTime(val) {
+                if(!val) return '';
+                const hasAmPm = /am|pm/i.test(val);
+                const isPm = /pm/i.test(val);
+                let timePart = val.replace(/[^0-9:]/g, '');
+                
+                if(!timePart.includes(':') && timePart.length <= 4) {
+                    if(timePart.length === 1) timePart = '0' + timePart + ':00';
+                    else if(timePart.length === 2) timePart = timePart + ':00';
+                    else if(timePart.length === 3) timePart = '0' + timePart.charAt(0) + ':' + timePart.slice(1);
+                    else if(timePart.length === 4) timePart = timePart.slice(0,2) + ':' + timePart.slice(2);
+                }
+                const parts = timePart.split(':');
+                if(parts.length < 2) return val;
+                let h = parseInt(parts[0]) || 0;
+                let m = parseInt(parts[1]) || 0;
+                if(m > 59) m = 59;
+
+                let ampm = 'AM';
+                if (h >= 12) {
+                    ampm = 'PM';
+                    if (h > 12) h -= 12;
+                } else if (h === 0) {
+                    h = 12;
+                } else if (hasAmPm && isPm && h < 12) {
+                    ampm = 'PM';
+                } else if (hasAmPm && !isPm && h === 12) {
+                    h = 12;
+                }
+
+                return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ' ' + ampm;
+            },
+
+            manualTimeChange(source) {
+                const sEl = document.getElementById('logStartTime');
+                const eEl = document.getElementById('logEndTime');
+                const dEl = document.getElementById('logManualDuration');
+                
+                if(source === 'start') sEl.value = this.formatTextTime(sEl.value);
+                if(source === 'end') eEl.value = this.formatTextTime(eEl.value);
+
+                const getMs = (timeStr) => {
+                    if(!timeStr) return 0;
+                    const isPm = /pm/i.test(timeStr);
+                    const parts = timeStr.replace(/[^0-9:]/g, '').split(':');
+                    let h = parseInt(parts[0]) || 0;
+                    let m = parseInt(parts[1]) || 0;
+                    if (isPm && h < 12) h += 12;
+                    if (!isPm && h === 12) h = 0;
+                    return (h*60 + m) * 60000;
+                };
+
+                const msToDurStr = (ms) => {
+                    if (ms < 0) ms = 0;
+                    const h = Math.floor(ms / 3600000);
+                    const m = Math.floor((ms % 3600000) / 60000);
+                    return String(Math.min(h, 99)).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+                };
+
+                const s = getMs(sEl.value);
+                let e = getMs(eEl.value);
+
+                if (sEl.value && eEl.value) {
+                    let d = e >= s ? (e - s) : ((e + 86400000) - s);
+                    dEl.value = msToDurStr(d);
+                } else {
+                    dEl.value = '';
+                }
+            },
+
+            
+            switchEntryMode(mode) {
+                const container = document.getElementById('timerContainer');
+                const tBtn = document.getElementById('modeTimerBtn');
+                const mBtn = document.getElementById('modeManualBtn');
+                
+                if (mode === 'timer') {
+                    container.classList.remove('manual-mode');
+                    container.classList.add('timer-mode');
+                    tBtn.classList.add('active');
+                    mBtn.classList.remove('active');
+                } else {
+                    container.classList.remove('timer-mode');
+                    container.classList.add('manual-mode');
+                    mBtn.classList.add('active');
+                    tBtn.classList.remove('active');
+                    
+                    // Pre-fill date with today if empty
+                    const dateInput = document.getElementById('logDate');
+                    if (!dateInput.value) {
+                        const now = new Date();
+                        const pad = n => String(n).padStart(2, '0');
+                        dateInput.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+                    }
+                }
+            },
+
+            init() {
+                this.currentUser = typeof Auth !== 'undefined' ? Auth.getCurrentUser() : null;
+                if (!this.currentUser) return; // auth.js will redirect
+                
+                this.loadData();
+                this.populateProjectDropdown();
+                this.renderLogs();
+
+                const activeTimerStr = localStorage.getItem('gravityHrActiveTimer');
+                if (activeTimerStr) {
+                    const activeData = JSON.parse(activeTimerStr);
+                    if (activeData.userId === this.currentUser.id) {
+                        this.resumeTimer(activeData);
+                    }
+                }
+
+                // Initialize Summary Date Range (Current Month by default)
+                const now = new Date();
+                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+                const pad = n => String(n).padStart(2, '0');
+                this.summaryStartDate = `${firstDay.getFullYear()}-${pad(firstDay.getMonth() + 1)}-${pad(firstDay.getDate())}`;
+                this.summaryEndDate = `${lastDay.getFullYear()}-${pad(lastDay.getMonth() + 1)}-${pad(lastDay.getDate())}`;
+
+                const rangeLabel = document.getElementById('selectedDateRangeText');
+                if (rangeLabel) rangeLabel.innerText = `${this.formatDate(this.summaryStartDate)} - ${this.formatDate(this.summaryEndDate)}`;
+
+                const reportRangeLabel = document.getElementById('reportDateRangeText');
+                if (reportRangeLabel) reportRangeLabel.innerText = `${this.formatDate(this.summaryStartDate)} - ${this.formatDate(this.summaryEndDate)}`;
+
+                // Initialize Timer Date to Today
+                const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+                const logDateInput = document.getElementById('logDate');
+                if (logDateInput) logDateInput.value = todayStr;
+
+                this.populateSummaryFilters();
+                this.populateReportFilters();
+
+                // Restore active tab or default to timer
+                const savedTab = localStorage.getItem('gravityHrActiveTimerTab') || 'timer';
+                this.switchTab(savedTab);
+            },
+
+            loadData() {
+                const logsStr = localStorage.getItem('gravityHrTimerLogs');
+                this.logs = logsStr ? JSON.parse(logsStr) : [];
+
+                const projStr = localStorage.getItem('gravityHrProjects');
+                this.projects = projStr ? JSON.parse(projStr) : [];
+
+                const clientStr = localStorage.getItem('gravityHrClients');
+                this.clients = clientStr ? JSON.parse(clientStr) : [];
+
+                const tagStr = localStorage.getItem('gravityHrTags');
+                this.tags = tagStr ? JSON.parse(tagStr) : [];
+            },
+
+            saveData() {
+                localStorage.setItem('gravityHrTimerLogs', JSON.stringify(this.logs));
+            },
+
+            switchTab(tab) {
+                this.timerTab = tab;
+                localStorage.setItem('gravityHrActiveTimerTab', tab);
+
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.tab === tab);
+                });
+                document.getElementById('timerContainer').style.display = tab === 'timer' ? 'block' : 'none';
+                document.getElementById('summaryContainer').style.display = tab === 'summary' ? 'block' : 'none';
+                document.getElementById('reportContainer').style.display = tab === 'report' ? 'block' : 'none';
+
+                if (tab === 'summary') {
+                    this.updateSummary();
+                } else if (tab === 'report') {
+                    this.updateReport();
+                }
+            },
+
+            // --- SUMMARY METHODS ---
+            populateSummaryFilters() {
+                // Initialize default values if needed
+                if (this.currentUser.role === 'Employee') {
+                    document.getElementById('summaryEmployeeFilter').value = this.currentUser.id;
+                    document.getElementById('selectedSummaryEmployeeText').innerText = this.currentUser.name;
+                }
+            },
+
+            updateSummary() {
+                const search = document.getElementById('summarySearch').value.toLowerCase().trim();
+                const client = (document.getElementById('summaryClientFilter')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}}).value;
+                const projectId = document.getElementById('summaryProjectFilter').value;
+                const tag = document.getElementById('summaryTagFilter').value;
+                const employeeId = document.getElementById('summaryEmployeeFilter').value;
+
+                let filtered = this.logs.filter(l => {
+                    // Role based restriction: Employees see only their own
+                    if (this.currentUser.role === 'Employee' && String(l.userId) !== String(this.currentUser.id)) return false;
+
+                    // Date range filter
+                    if (this.summaryStartDate && l.date < this.summaryStartDate) return false;
+                    if (this.summaryEndDate && l.date > this.summaryEndDate) return false;
+
+                    // Search filter
+                    if (search && !(l.description || '').toLowerCase().includes(search) && !(l.projectName || '').toLowerCase().includes(search)) return false;
+
+                    // Dropdown filters
+                    if (employeeId && String(l.userId) !== String(employeeId)) return false;
+                    if (projectId && String(l.projectId) !== String(projectId)) return false;
+                    if (tag && !(l.tags || []).includes(tag)) return false;
+
+                    if (client) {
+                        if (l.clientId) {
+                            if (String(l.clientId) !== String(client)) return false;
+                        } else {
+                            const project = this.projects.find(p => String(p.id) === String(l.projectId));
+                            if (!project || project.clientId !== client) return false;
+                        }
+                    }
+
+                    return true;
+                });
+
+                this.updateSummaryKPIs(filtered);
+                this.renderSummaryCharts(filtered);
+                this.renderProjectTotals(filtered);
+            },
+
+            updateSummaryKPIs(logs) {
+                let totalDurationMs = 0;
+                const projMap = {};
+
+                logs.forEach(l => {
+                    totalDurationMs += (l.durationMs || 0);
+                    const name = l.projectName || 'Unassigned';
+                    projMap[name] = (projMap[name] || 0) + (l.durationMs || 0);
+                });
+
+                // Top project
+                let topProject = '-';
+                let maxMs = 0;
+                for (const [name, ms] of Object.entries(projMap)) {
+                    if (ms > maxMs) {
+                        maxMs = ms;
+                        topProject = name;
+                    }
+                }
+
+                const kpiTotal = document.getElementById('kpiTotalTime');
+                if (kpiTotal) kpiTotal.innerText = this.formatDurationMs(totalDurationMs);
+
+                const kpiProject = document.getElementById('kpiTopProject');
+                if (kpiProject) kpiProject.innerText = topProject;
+            },
+
+            renderSummaryCharts(filteredLogs) {
+                this.renderSummaryBarChart(filteredLogs);
+                this.renderSummaryDoughnutChart(filteredLogs);
+            },
+
+            // --- REPORT METHODS ---
+            populateReportFilters() {
+                // Initialize default values if needed
+                if (this.currentUser.role === 'Employee') {
+                    document.getElementById('reportEmployeeFilter').value = this.currentUser.id;
+                    document.getElementById('selectedReportEmployeeText').innerText = this.currentUser.name;
+                }
+            },
+
+            updateReport() {
+                const search = document.getElementById('reportSearch').value.toLowerCase().trim();
+                const client = (document.getElementById('reportClientFilter')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}}).value;
+                const projectId = document.getElementById('reportProjectFilter').value;
+                const tag = document.getElementById('reportTagFilter').value;
+                const employeeId = document.getElementById('reportEmployeeFilter').value;
+
+                let filtered = this.logs.filter(l => {
+                    // Role based restriction: Employees see only their own
+                    if (this.currentUser.role === 'Employee' && String(l.userId) !== String(this.currentUser.id)) return false;
+
+                    // Date range filter
+                    if (this.summaryStartDate && l.date < this.summaryStartDate) return false;
+                    if (this.summaryEndDate && l.date > this.summaryEndDate) return false;
+
+                    // Search filter
+                    if (search && !(l.description || '').toLowerCase().includes(search) && !(l.projectName || '').toLowerCase().includes(search) && !(l.userName || '').toLowerCase().includes(search)) return false;
+
+                    // Dropdown filters
+                    if (employeeId && String(l.userId) !== String(employeeId)) return false;
+                    if (projectId && String(l.projectId) !== String(projectId)) return false;
+                    if (tag && !(l.tags || []).includes(tag)) return false;
+
+                    if (client) {
+                        if (l.clientId) {
+                            if (String(l.clientId) !== String(client)) return false;
+                        } else {
+                            const project = this.projects.find(p => String(p.id) === String(l.projectId));
+                            if (!project || project.clientId !== client) return false;
+                        }
+                    }
+
+                    return true;
+                });
+
+                // Sorting
+                filtered.sort((a, b) => {
+                    let valA = a[this.reportSortBy];
+                    let valB = b[this.reportSortBy];
+
+                    if (this.reportSortBy === 'durationMs') {
+                        valA = valA || 0;
+                        valB = valB || 0;
+                    } else {
+                        valA = (valA || '').toString().toLowerCase();
+                        valB = (valB || '').toString().toLowerCase();
+                    }
+
+                    if (valA < valB) return this.reportSortOrder === 'asc' ? -1 : 1;
+                    if (valA > valB) return this.reportSortOrder === 'asc' ? 1 : -1;
+                    return 0;
+                });
+
+                this.currentReportData = filtered;
+                this.renderReportTable(filtered);
+            },
+
+            renderReportTable(logs) {
+                const body = document.getElementById('reportTableBody');
+                if (!body) return;
+
+                let html = '';
+                logs.forEach(log => {
+                    html += `
+                        <tr>
+                            <td>${log.userName || '-'}</td>
+                            <td>${log.description || '-'}</td>
+                            <td><span class="badge" style="background: ${log.projectColor}20; color: ${log.projectColor};">${log.projectName || '-'}</span></td>
+                            <td>
+                                <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                    ${(log.tags && log.tags.length > 0) ? log.tags.map(t => `<span class="tag-pill" style="font-size: 0.7rem; padding: 1px 5px; border-radius: 3px; background: rgba(99, 102, 241, 0.1); color: var(--primary-color); border: 1px solid rgba(99, 102, 241, 0.2);">${t}</span>`).join('') : '-'}
+                                </div>
+                            </td>
+                            <td>${log.date}</td>
+                            <td>${log.startTime}</td>
+                            <td>${log.endTime}</td>
+                            <td style="text-align: right; font-weight: 600; color: var(--primary-color);">${this.formatDurationMs(log.durationMs)}</td>
+                        </tr>
+                    `;
+                });
+
+                body.innerHTML = html || '<tr><td colspan="10" style="text-align: center; padding: 2rem; color: var(--text-dim);">No data found for the selected filters.</td></tr>';
+            },
+
+            handleReportSort(field) {
+                if (this.reportSortBy === field) {
+                    this.reportSortOrder = this.reportSortOrder === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this.reportSortBy = field;
+                    this.reportSortOrder = 'asc';
+                }
+
+                // Update UI icons
+                document.querySelectorAll('#reportContainer th i').forEach(ix => {
+                    ix.className = 'fa-solid fa-sort';
+                    ix.style.opacity = '0.3';
+                });
+
+                // Find current th and update its icon
+                const headers = document.querySelectorAll('#reportContainer th');
+                let targetTh = null;
+                headers.forEach(th => {
+                    if (th.getAttribute('onclick') && th.getAttribute('onclick').includes(`'${field}'`)) {
+                        targetTh = th;
+                    }
+                });
+
+                if (targetTh) {
+                    const icon = targetTh.querySelector('i');
+                    if (icon) {
+                        icon.className = this.reportSortOrder === 'asc' ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
+                        icon.style.opacity = '1';
+                    }
+                }
+
+                this.updateReport();
+            },
+
+            exportReportCSV() {
+                const data = this.currentReportData || [];
+                if (data.length === 0) {
+                    alert('No data to export for the selected filters.');
+                    return;
+                }
+
+                const headers = ['Employee', 'Client', 'Description', 'Project', 'Tags', 'Site', 'Date', 'Start', 'End', 'Duration'];
+
+                const rows = data.map(log => {
+                    return [
+                        `"${(log.userName || '').replace(/"/g, '""')}"`,
+                        `"${(log.clientName || '').replace(/"/g, '""')}"`,
+                        `"${(log.description || '').replace(/"/g, '""')}"`,
+                        `"${(log.projectName || '').replace(/"/g, '""')}"`,
+                        `"${(log.tags || []).join('; ').replace(/"/g, '""')}"`,
+                        `"${(log.site || '').replace(/"/g, '""')}"`,
+                        `"${log.date || ''}"`,
+                        `"${log.startTime || ''}"`,
+                        `"${log.endTime || ''}"`,
+                        `"${this.formatDurationMs(log.durationMs || 0)}"`
+                    ].join(',');
+                });
+
+                const csvContent = [headers.join(','), ...rows].join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+
+                let filename = 'timer_report';
+                if (this.summaryStartDate && this.summaryEndDate) {
+                    filename += `_${this.summaryStartDate}_to_${this.summaryEndDate}`;
+                }
+                filename += '.csv';
+
+                link.setAttribute("download", filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            },
+
+            renderSummaryBarChart(logs) {
+                const ctx = document.getElementById('summaryBarChart').getContext('2d');
+
+                const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+                const datasets = [];
+                let colorIndex = 0;
+
+                // Group by Date AND Project
+                const combinedMap = {};
+                // Pre-fill dates
+                const [sY, sM, sD] = this.summaryStartDate.split('-').map(Number);
+                const [eY, eM, eD] = this.summaryEndDate.split('-').map(Number);
+
+                let current = new Date(sY, sM - 1, sD);
+                const end = new Date(eY, eM - 1, eD);
+
+                let safety = 0;
+                while (current <= end && safety < 1000) {
+                    safety++;
+                    const y = current.getFullYear();
+                    const m = String(current.getMonth() + 1).padStart(2, '0');
+                    const d = String(current.getDate()).padStart(2, '0');
+                    const dStr = `${y}-${m}-${d}`;
+                    combinedMap[dStr] = {};
+                    current.setDate(current.getDate() + 1);
+                }
+
+                const projectNames = new Set();
+
+                logs.forEach(l => {
+                    if (combinedMap[l.date]) {
+                        const pName = l.projectName || 'Unassigned';
+                        projectNames.add(pName);
+                        combinedMap[l.date][pName] = (combinedMap[l.date][pName] || 0) + (l.durationMs || 0) / (1000 * 60 * 60);
+                    }
+                });
+
+                const labels = Object.keys(combinedMap).map(d => d.split('-').slice(1).join('/'));
+
+                // Build datasets per project
+                projectNames.forEach(pName => {
+                    const data = Object.keys(combinedMap).map(d => combinedMap[d][pName] || 0);
+                    datasets.push({
+                        label: pName,
+                        data: data,
+                        backgroundColor: colors[colorIndex % colors.length],
+                        borderWidth: 0,
+                        maxBarThickness: 40
+                    });
+                    colorIndex++;
+                });
+
+                if (this.summaryCharts.bar) this.summaryCharts.bar.destroy();
+
+                this.summaryCharts.bar = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: (item) => {
+                                        return ` ${item.dataset.label}: ${TimerApp.formatDurationMs(item.raw * 3600000)}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: { stacked: true, beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.5)' } },
+                            x: { stacked: true, grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 10 } } }
+                        }
+                    }
+                });
+            },
+
+            renderSummaryDoughnutChart(logs) {
+                const ctx = document.getElementById('summaryDoughnutChart').getContext('2d');
+
+                // Group by project
+                const projMap = {};
+                logs.forEach(l => {
+                    const name = l.projectName || 'Unassigned';
+                    projMap[name] = (projMap[name] || 0) + (l.durationMs || 0) / (1000 * 60 * 60);
+                });
+
+                const labels = Object.keys(projMap);
+                const data = Object.values(projMap);
+                const totalHours = data.reduce((a, b) => a + b, 0);
+                const totalMs = logs.reduce((a, b) => a + (b.durationMs || 0), 0); // Need to re-calc to be safe if projMap used hours
+
+                // Re-calculating total MS for the center text
+                let totalDurationMs = 0;
+                logs.forEach(l => totalDurationMs += (l.durationMs || 0));
+                const formattedTotal = this.formatDurationMs(totalDurationMs);
+
+                if (this.summaryCharts.doughnut) this.summaryCharts.doughnut.destroy();
+
+                this.summaryCharts.doughnut = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: 'rgba(255,255,255,0.7)', padding: 20, boxWidth: 10, font: { size: 11 } }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: (item) => {
+                                        const dataset = item.chart.data.datasets[item.datasetIndex];
+                                        const value = dataset.data[item.dataIndex];
+                                        return ` ${item.label}: ${TimerApp.formatDurationMs(value * 3600000)}`;
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '70%'
+                    },
+                    plugins: [{
+                        id: 'centerText',
+                        afterDraw: (chart) => {
+                            const { ctx, chartArea: { top, bottom, left, right, width, height } } = chart;
+                            ctx.save();
+
+                            // Draw Title "TOTAL"
+                            ctx.font = '700 0.75rem Outfit';
+                            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText('TOTAL HOURS', width / 2 + left, height / 2 + top - 10);
+
+                            // Draw Value
+                            ctx.font = '700 1.25rem Outfit';
+                            ctx.fillStyle = '#06b6d4';
+                            ctx.fillText(formattedTotal, width / 2 + left, height / 2 + top + 15);
+                            ctx.restore();
+                        }
+                    }]
+                });
+            },
+
+            renderProjectTotals(logs) {
+                const container = document.getElementById('projectTotalsContainer');
+
+                let totalOverallMs = 0;
+                const projMap = {};
+                logs.forEach(l => {
+                    totalOverallMs += (l.durationMs || 0);
+                    const id = l.projectId;
+                    if (!projMap[id]) {
+                        projMap[id] = {
+                            name: l.projectName,
+                            client: '',
+                            ms: 0,
+                            color: l.projectColor || '#6366f1' // We'll map colors below
+                        };
+                        const p = this.projects.find(proj => String(proj.id) === String(id));
+                        if (p) projMap[id].client = p.clientId || '';
+                    }
+                    projMap[id].ms += (l.durationMs || 0);
+                });
+
+                // Get Top 10
+                let sortedProjects = Object.values(projMap).sort((a, b) => b.ms - a.ms).slice(0, 10);
+
+                // Assign consistent colors (matching Doughnut if possible based on array index)
+                const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+                sortedProjects.forEach((p, idx) => {
+                    p.color = colors[idx % colors.length];
+                });
+
+                let html = '';
+                sortedProjects.forEach(p => {
+                    const perc = totalOverallMs > 0 ? ((p.ms / totalOverallMs) * 100).toFixed(1) : 0;
+                    html += `
+                        <div style="padding: 0.75rem; background: rgba(0,0,0,0.15); border-radius: 6px; position: relative; overflow: hidden; margin-bottom: 2px;">
+                            <!-- Progress Background -->
+                            <div style="position: absolute; top: 0; left: 0; height: 100%; width: ${perc}%; background: ${p.color}; opacity: 0.15; z-index: 1;"></div>
+                            
+                            <!-- Content -->
+                            <div style="position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center;">
+                                <div style="flex-grow: 1; min-width: 0; padding-right: 1rem;">
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                        <div style="width: 8px; height: 8px; border-radius: 50%; background: ${p.color}; flex-shrink: 0;"></div>
+                                        <div style="font-size: 0.85rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.name}</div>
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: var(--text-dim); padding-left: 16px;">${p.client || 'No Client'}</div>
+                                </div>
+                                <div style="text-align: right; flex-shrink: 0;">
+                                    <div style="font-size: 0.9rem; font-weight: 700; color: #fff; margin-bottom: 2px;">${this.formatDurationMs(p.ms)}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-dim);">${perc}%</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html || '<div class="text-dim" style="grid-column: 1/-1; text-align: center; padding: 2rem;">No data for the selected period.</div>';
+            },
+
+            calendarViewDate: new Date(),
+            rangeStart: null,
+            rangeEnd: null,
+
+            openDateRangePicker(e) {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+
+                // Initialize range from current summary dates
+                this.rangeStart = this.summaryStartDate;
+                this.rangeEnd = this.summaryEndDate;
+                this.calendarViewDate = new Date(this.summaryStartDate + 'T00:00:00');
+
+                const modal = document.getElementById('dateRangeModal');
+                if (modal) {
+                    modal.classList.add('active');
+                }
+                this.renderCalendar();
+            },
+
+            closeDateRangePicker() {
+                const modal = document.getElementById('dateRangeModal');
+                if (modal) {
+                    modal.classList.remove('active');
+                }
+            },
+
+            prevMonth() {
+                this.calendarViewDate.setMonth(this.calendarViewDate.getMonth() - 1);
+                this.renderCalendar();
+            },
+
+            renderCalendar() {
+                const renderSingleMonth = (dateObj, gridId, titleId) => {
+                    const grid = document.getElementById(gridId);
+                    const title = document.getElementById(titleId);
+                    if (!grid || !title) return;
+
+                    const months = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+                    const year = dateObj.getFullYear();
+                    const month = dateObj.getMonth();
+
+                    title.innerText = `${months[month]} ${year}`;
+
+                    const firstDay = new Date(year, month, 1).getDay();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                    let html = '';
+                    const labels = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+                    labels.forEach(l => html += `<div class="calendar-day-label">${l}</div>`);
+
+                    // Empty days
+                    for (let i = 0; i < firstDay; i++) {
+                        html += `<div class="calendar-day empty"></div>`;
+                    }
+
+                    const pad = n => String(n).padStart(2, '0');
+                    const todayStr = new Date().toISOString().split('T')[0];
+
+                    for (let d = 1; d <= daysInMonth; d++) {
+                        const dateStr = `${year}-${pad(month + 1)}-${pad(d)}`;
+                        let classes = ['calendar-day'];
+
+                        if (dateStr === todayStr) classes.push('today');
+                        if (dateStr === this.rangeStart || dateStr === this.rangeEnd) classes.push('selected');
+                        if (this.rangeStart && this.rangeEnd && dateStr > this.rangeStart && dateStr < this.rangeEnd) classes.push('in-range');
+
+                        const isSun = (firstDay + d - 1) % 7 === 0;
+                        const color = isSun ? '#ff3366' : '#fff';
+
+                        html += `<div class="${classes.join(' ')}" style="color: ${color}" onclick="TimerApp.selectCalendarDate('${dateStr}')">${d}</div>`;
+                    }
+
+                    grid.innerHTML = html;
+                };
+
+                // Render Left Calendar (Current view date)
+                renderSingleMonth(this.calendarViewDate, 'calendarGridLeft', 'calendarMonthYearLeft');
+
+                // Render Right Calendar (Next month)
+                const nextMonthDate = new Date(this.calendarViewDate);
+                nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+                renderSingleMonth(nextMonthDate, 'calendarGridRight', 'calendarMonthYearRight');
+            },
+
+            setQuickRange(type) {
+                // Update active state of buttons
+                document.querySelectorAll('.quick-select-btn').forEach(btn => btn.classList.remove('active'));
+                const btn = event.currentTarget;
+                if (btn) btn.classList.add('active');
+
+                const today = new Date();
+                let start, end;
+                const pad = n => String(n).padStart(2, '0');
+                const form = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+                switch (type) {
+                    case 'today':
+                        start = new Date();
+                        end = new Date();
+                        break;
+                    case 'yesterday':
+                        start = new Date(today);
+                        start.setDate(today.getDate() - 1);
+                        end = new Date(start);
+                        break;
+                    case 'this_week':
+                        start = new Date(today);
+                        const dayUrl = start.getDay();
+                        const diffToMonday = start.getDate() - dayUrl + (dayUrl === 0 ? -6 : 1); // Adjust for Monday start week
+                        start.setDate(diffToMonday);
+                        end = new Date(start);
+                        end.setDate(start.getDate() + 6);
+                        break;
+                    case 'last_week':
+                        start = new Date(today);
+                        const dayLW = start.getDay();
+                        const diffToPrevMonday = start.getDate() - dayLW + (dayLW === 0 ? -6 : 1) - 7;
+                        start.setDate(diffToPrevMonday);
+                        end = new Date(start);
+                        end.setDate(start.getDate() + 6);
+                        break;
+                    case 'this_month':
+                        start = new Date(today.getFullYear(), today.getMonth(), 1);
+                        end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                        break;
+                    case 'last_month':
+                        start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                        end = new Date(today.getFullYear(), today.getMonth(), 0);
+                        break;
+                    case 'this_year':
+                        start = new Date(today.getFullYear(), 0, 1);
+                        end = new Date(today.getFullYear(), 11, 31);
+                        break;
+                    case 'last_year':
+                        start = new Date(today.getFullYear() - 1, 0, 1);
+                        end = new Date(today.getFullYear() - 1, 11, 31);
+                        break;
+                }
+
+                if (start && end) {
+                    this.rangeStart = form(start);
+                    this.rangeEnd = form(end);
+
+                    // Set calendar view to start month
+                    this.calendarViewDate = new Date(start);
+
+                    this.renderCalendar();
+                }
+            },
+
+            selectCalendarDate(dateStr) {
+                if (!this.rangeStart || (this.rangeStart && this.rangeEnd)) {
+                    this.rangeStart = dateStr;
+                    this.rangeEnd = null;
+                } else {
+                    if (dateStr < this.rangeStart) {
+                        this.rangeEnd = this.rangeStart;
+                        this.rangeStart = dateStr;
+                    } else {
+                        this.rangeEnd = dateStr;
+                    }
+                }
+                this.renderCalendar();
+            },
+
+            applyDateRange() {
+                if (!this.rangeStart || !this.rangeEnd) {
+                    alert("Please select a start and end date.");
+                    return;
+                }
+
+                this.summaryStartDate = this.rangeStart;
+                this.summaryEndDate = this.rangeEnd;
+
+                const rangeLabel = document.getElementById('selectedDateRangeText');
+                if (rangeLabel) {
+                    rangeLabel.innerText = `${this.formatDate(this.rangeStart)} - ${this.formatDate(this.rangeEnd)}`;
+                }
+
+                const reportRangeLabel = document.getElementById('reportDateRangeText');
+                if (reportRangeLabel) {
+                    reportRangeLabel.innerText = `${this.formatDate(this.rangeStart)} - ${this.formatDate(this.rangeEnd)}`;
+                }
+
+                this.closeDateRangePicker();
+                this.updateSummary();
+                this.updateReport();
+            },
+
+            // --- DROPDOWNS ---
+            populateProjectDropdown() {
+                const list = document.getElementById('projectOptionsList');
+                if (!list) return;
+
+                // Filter: Only active projects, irrespective of role to match task page
+                let activeProjects = this.projects.filter(p => p.status !== 'Completed');
+
+                // Store active projects for filtering later
+                this.activeProjects = activeProjects;
+                this.renderProjectOptions(activeProjects);
+
+                // Explicitly bind the trigger click
+                const trigger = document.getElementById('projectSelectBtn');
+                if (trigger) {
+                    trigger.onclick = (e) => this.toggleProjectDropdown(e);
+                }
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.custom-select-container')) {
+                        document.querySelectorAll('.glass-panel').forEach(m => {
+                            if (m.id.endsWith('DropdownMenu')) m.style.display = 'none';
+                        });
+                    }
+
+                    // For inline row dropdowns
+                    if (!e.target.closest('.custom-select-trigger') && !e.target.closest('.row-dropdown')) {
+                        document.querySelectorAll('.row-dropdown').forEach(m => m.style.display = 'none');
+                    }
+                });
+            },
+
+            toggleProjectDropdown(e) {
+                e.preventDefault();
+                const menu = document.getElementById('projectDropdownMenu');
+                const isHidden = menu.style.display === 'none';
+
+                if (isHidden) {
+                    document.querySelectorAll('.glass-panel[id$="DropdownMenu"]').forEach(m => m.style.display = 'none');
+                    menu.style.display = 'block';
+                    document.getElementById('projectSearchInput').value = '';
+                    this.renderProjectOptions(this.activeProjects || []);
+                    document.getElementById('projectSearchInput').focus();
+                } else {
+                    menu.style.display = 'none';
+                }
+            },
+
+            renderProjectOptions(projects) {
+                const list = document.getElementById('projectOptionsList');
+                if (!list) return;
+
+                if (projects.length === 0) {
+                    list.innerHTML = `<div style="padding: 0.5rem; color: var(--text-dim); text-align: center; font-size: 0.85rem;">No projects found</div>`;
+                    return;
+                }
+
+                let html = '';
+                projects.forEach(p => {
+                    const projCode = p.number ? `<strong>${p.number}</strong>` : '';
+                    html += `
+                <div class="project-option" onclick="TimerApp.selectProject('${p.id}', '${p.number || ''}', '${(p.name || '').replace(/'/g, "\\'")}')" 
+                     style="padding: 0.5rem; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-color);">
+                    <div style="width: 10px; height: 10px; border-radius: 50%; background-color: ${p.color || '#6366f1'};"></div>
+                    ${projCode} <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.name}</span>
+                </div>
+            `;
+                });
+
+                // Add hover styles dynamically
+                list.innerHTML = html;
+                const options = list.querySelectorAll('.project-option');
+                options.forEach(opt => {
+                    opt.addEventListener('mouseover', () => opt.style.backgroundColor = 'rgba(255,255,255,0.05)');
+                    opt.addEventListener('mouseout', () => opt.style.backgroundColor = 'transparent');
+                });
+            },
+
+            toggleSearchDropdown(e, menuId, searchInputId) {
+                e.preventDefault();
+                const menu = document.getElementById(menuId);
+                const isHidden = menu.style.display === 'none';
+
+                if (isHidden) {
+                    // Close other dropdowns first
+                    document.querySelectorAll('.glass-panel[id$="DropdownMenu"]').forEach(m => m.style.display = 'none');
+
+                    menu.style.display = 'block';
+                    const input = document.getElementById(searchInputId);
+                    if (input) {
+                        input.value = '';
+                        input.focus();
+                    }
+
+                    // Re-render full list on open
+                    const field = searchInputId.toLowerCase().includes('client') ? 'client' :
+                        searchInputId.toLowerCase().includes('project') ? 'project' : 'employee';
+                    const type = searchInputId.toLowerCase().includes('summary') ? 'summary' : 'report';
+                    const listId = searchInputId.replace('SearchInput', 'OptionsList');
+
+                    this.renderSearchOptions(this.searchableData[type][field + 's'], listId, type, field);
+                } else {
+                    menu.style.display = 'none';
+                }
+            },
+
+            filterSearchDropdown(searchInputId, listId, field, type) {
+                const query = document.getElementById(searchInputId).value.toLowerCase().trim();
+                const data = this.searchableData[type][field + 's'];
+
+                if (!query) {
+                    this.renderSearchOptions(data, listId, type, field);
+                    return;
+                }
+
+                const filtered = data.filter(item => {
+                    const name = typeof item === 'string' ? item : item.name;
+                    const number = item.number ? item.number.toLowerCase() : '';
+                    return name.toLowerCase().includes(query) || number.includes(query);
+                });
+
+                this.renderSearchOptions(filtered, listId, type, field);
+            },
+
+            renderSearchOptions(data, listId, type, field) {
+                const list = document.getElementById(listId);
+                if (!list) return;
+
+                if (data.length === 0) {
+                    list.innerHTML = `<div style="padding: 0.5rem; color: var(--text-dim); text-align: center; font-size: 0.85rem;">No results found</div>`;
+                    return;
+                }
+
+                let html = '';
+                // Add "All" option if it's a filter list (not yet implemented specifically, but implied by data being full list)
+                const allLabel = field === 'client' ? 'All Clients' : field === 'project' ? 'All Projects' : 'All Employees';
+
+                // Only show "All" if it's the initial list or if we want to allow resetting
+                html += `
+                    <div class="search-option" onclick="TimerApp.selectSearchOption('', '${allLabel}', '${type}', '${field}')" 
+                         style="padding: 0.5rem; cursor: pointer; border-radius: 4px; font-size: 0.85rem; color: var(--primary-color); font-weight: 600;">
+                        ${allLabel}
+                    </div>
+                `;
+
+                data.forEach(item => {
+                    const id = typeof item === 'string' ? item : item.id;
+                    const name = typeof item === 'string' ? item : item.name;
+                    const number = item.number || '';
+                    const color = item.color || '#6366f1';
+
+                    if (field === 'project') {
+                        const projCode = number ? `<strong>${number}</strong> ` : '';
+                        html += `
+                            <div class="search-option project-option-item" onclick="TimerApp.selectSearchOption('${id}', '${(name || '').replace(/'/g, "\\'")}', '${type}', '${field}', '${number}')" 
+                                 style="padding: 0.75rem; cursor: pointer; border-radius: 6px; display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; color: var(--text-color); transition: all 0.2s ease;">
+                                <div style="width: 12px; height: 12px; border-radius: 50%; background-color: ${color}; border: 2px solid rgba(255,255,255,0.1); flex-shrink: 0;"></div>
+                                <div style="display: flex; gap: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    ${projCode} <span style="font-weight: 400; color: var(--text-dim);">${name}</span>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        html += `
+                            <div class="search-option" onclick="TimerApp.selectSearchOption('${id}', '${(name || '').replace(/'/g, "\\'")}', '${type}', '${field}')" 
+                                 style="padding: 0.75rem; cursor: pointer; border-radius: 6px; font-size: 0.9rem; color: var(--text-color); transition: all 0.2s ease;">
+                                ${name}
+                            </div>
+                        `;
+                    }
+                });
+
+                list.innerHTML = html;
+                const options = list.querySelectorAll('.search-option');
+                options.forEach(opt => {
+                    opt.addEventListener('mouseover', () => opt.style.backgroundColor = 'rgba(255,255,255,0.05)');
+                    opt.addEventListener('mouseout', () => opt.style.backgroundColor = 'transparent');
+                });
+            },
+
+            selectSearchOption(id, name, type, field, number) {
+                // Update hidden input
+                const filterId = `${type}${field.charAt(0).toUpperCase() + field.slice(1)}Filter`;
+                const input = document.getElementById(filterId);
+                if (input) {
+                    input.value = id;
+                    // Trigger update
+                    if (type === 'summary') this.updateSummary();
+                    else this.updateReport();
+                }
+
+                // Update display text
+                const textId = `selected${type.charAt(0).toUpperCase() + type.slice(1)}${field.charAt(0).toUpperCase() + field.slice(1)}Text`;
+                const textElem = document.getElementById(textId);
+                if (textElem) {
+                    if (field === 'project' && number && id) {
+                        textElem.innerHTML = `<strong>${number}</strong> ${name}`;
+                    } else {
+                        textElem.innerText = name;
+                    }
+                }
+
+                // Close dropdown
+                const menuId = `${type}${field.charAt(0).toUpperCase() + field.slice(1)}DropdownMenu`;
+                const menu = document.getElementById(menuId);
+                if (menu) menu.style.display = 'none';
+            },
+
+            // --- CLIENT DROPDOWN ---
+            toggleClientDropdown(e) {
+                e.preventDefault();
+                const menu = document.getElementById('clientDropdownMenu');
+                const isHidden = menu.style.display === 'none';
+
+                if (isHidden) {
+                    document.querySelectorAll('.glass-panel[id$="DropdownMenu"]').forEach(m => m.style.display = 'none');
+                    menu.style.display = 'block';
+                    document.getElementById('clientSearchInput').value = '';
+                    this.renderClientOptions(this.clients || []);
+                    document.getElementById('clientSearchInput').focus();
+                } else {
+                    menu.style.display = 'none';
+                }
+            },
+
+            filterClients() {
+                const query = document.getElementById('clientSearchInput').value.toLowerCase().trim();
+                const filtered = this.clients.filter(c => c.name.toLowerCase().includes(query));
+                this.renderClientOptions(filtered);
+            },
+
+            renderClientOptions(clients) {
+                const list = document.getElementById('clientOptionsList');
+                if (!list) return;
+
+                if (clients.length === 0) {
+                    list.innerHTML = `<div style="padding: 0.5rem; color: var(--text-dim); text-align: center; font-size: 0.85rem;">No clients found</div>`;
+                    return;
+                }
+
+                let html = '';
+                clients.forEach(c => {
+                    html += `
+                        <div class="client-option" onclick="TimerApp.selectClient('${c.id || c.name}', '${(c.name || '').replace(/'/g, "\\'")}')" 
+                             style="padding: 0.5rem; cursor: pointer; border-radius: 4px; font-size: 0.85rem; color: var(--text-color);">
+                            ${c.name}
+                        </div>
+                    `;
+                });
+
+                list.innerHTML = html;
+                const options = list.querySelectorAll('.client-option');
+                options.forEach(opt => {
+                    opt.addEventListener('mouseover', () => opt.style.backgroundColor = 'rgba(255,255,255,0.05)');
+                    opt.addEventListener('mouseout', () => opt.style.backgroundColor = 'transparent');
+                });
+            },
+
+            selectClient(id, name) {
+                (document.getElementById('logClient')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}}).value = id;
+                (document.getElementById('selectedClientText')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}}).innerText = name;
+                document.getElementById('clientDropdownMenu').style.display = 'none';
+            },
+
+            // --- TAG DROPDOWN ---
+            toggleTagDropdown(e) {
+                e.preventDefault();
+                const menu = document.getElementById('tagDropdownMenu');
+                const isHidden = menu.style.display === 'none';
+
+                if (isHidden) {
+                    document.querySelectorAll('.glass-panel[id$="DropdownMenu"]').forEach(m => m.style.display = 'none');
+                    menu.style.display = 'block';
+                    document.getElementById('tagSearchInput').value = '';
+                    this.renderTagOptions(this.tags || []);
+                    document.getElementById('tagSearchInput').focus();
+                } else {
+                    menu.style.display = 'none';
+                }
+            },
+
+            filterTags() {
+                const query = document.getElementById('tagSearchInput').value.toLowerCase().trim();
+                const filtered = this.tags.filter(t => t.name.toLowerCase().includes(query));
+                this.renderTagOptions(filtered);
+            },
+
+            renderTagOptions(tags) {
+                const list = document.getElementById('tagOptionsList');
+                if (!list) return;
+
+                const selectedTags = this.getSelectedTags();
+
+                if (tags.length === 0) {
+                    list.innerHTML = `<div style="padding: 0.5rem; color: var(--text-dim); text-align: center; font-size: 0.85rem;">No tags found</div>`;
+                    return;
+                }
+
+                let html = '';
+                tags.forEach(t => {
+                    const isSelected = selectedTags.includes(t.name);
+                    html += `
+                        <div class="tag-option" onclick="TimerApp.toggleTagSelection('${(t.name || '').replace(/'/g, "\\'")}')" 
+                             style="padding: 0.5rem; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; color: var(--text-color);">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <div style="width: 8px; height: 8px; border-radius: 50%; background-color: ${t.color || '#6366f1'};"></div>
+                                ${t.name}
+                            </div>
+                            ${isSelected ? '<i class="fa-solid fa-check" style="color: var(--primary-color); font-size: 0.75rem;"></i>' : ''}
+                        </div>
+                    `;
+                });
+
+                list.innerHTML = html;
+                const options = list.querySelectorAll('.tag-option');
+                options.forEach(opt => {
+                    opt.addEventListener('mouseover', () => opt.style.backgroundColor = 'rgba(255,255,255,0.05)');
+                    opt.addEventListener('mouseout', () => opt.style.backgroundColor = 'transparent');
+                });
+            },
+
+            getSelectedTags() {
+                const val = document.getElementById('logTags').value;
+                return val ? val.split(',') : [];
+            },
+
+            toggleTagSelection(tagName) {
+                let tags = this.getSelectedTags();
+                if (tags.includes(tagName)) {
+                    tags = tags.filter(t => t !== tagName);
+                } else {
+                    tags.push(tagName);
+                }
+                document.getElementById('logTags').value = tags.join(',');
+                document.getElementById('selectedTagText').innerText = tags.length > 0 ? tags.join(', ') : 'Select Tags';
+                
+                // Re-render to show checkmarks
+                this.renderTagOptions(this.tags);
+            },
+
+            filterProjects() {
+                const query = document.getElementById('projectSearchInput').value.toLowerCase().trim();
+                if (!TimerApp.activeProjects) return;
+
+                if (!query) {
+                    TimerApp.renderProjectOptions(TimerApp.activeProjects);
+                    return;
+                }
+
+                const filtered = TimerApp.activeProjects.filter(p => {
+                    const nameMatch = p.name ? p.name.toLowerCase().includes(query) : false;
+                    const numMatch = p.number ? p.number.toLowerCase().includes(query) : false;
+                    return nameMatch || numMatch;
+                });
+                TimerApp.renderProjectOptions(filtered);
+            },
+
+            selectProject(id, number, name) {
+                // Set hidden input value
+                const input = document.getElementById('logProject');
+                input.value = id;
+
+                // Set display text
+                const projCodeText = (number && number !== 'undefined') ? `<strong>${number}</strong> ` : '';
+                document.getElementById('selectedProjectText').innerHTML = `${projCodeText}<span style="color: var(--text-color);">${name}</span>`;
+
+                // Hide dropdown
+                document.getElementById('projectDropdownMenu').style.display = 'none';
+
+                // Trigger generic change event to load sites
+                this.onProjectChange();
+            },
+
+            onProjectChange() {
+                const projId = document.getElementById('logProject').value;
+                const siteInput = (document.getElementById('logSite')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}});
+                const siteText = (document.getElementById('selectedSiteText')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}});
+
+                // Reset site
+                siteInput.value = '';
+                siteText.innerText = 'Select Site';
+                this.activeSites = [];
+
+                if (!projId) {
+                    this.renderSiteOptions([]);
+                    return;
+                }
+
+                const project = this.projects.find(p => String(p.id) === String(projId));
+                
+                // Auto-select client if project has one
+                if (project && project.clientId) {
+                    const client = this.clients.find(c => String(c.id) === String(project.clientId));
+                    if (client) {
+                        this.selectClient(client.id, client.name);
+                    }
+                }
+
+                if (project && project.sites) {
+                    this.activeSites = project.sites;
+                    this.renderSiteOptions(this.activeSites);
+                } else {
+                    this.renderSiteOptions([]);
+                }
+            },
+
+            toggleSiteDropdown(e) {
+                e.preventDefault();
+                const menu = document.getElementById('siteDropdownMenu');
+                const isHidden = menu.style.display === 'none';
+
+                if (isHidden) {
+                    // Close others
+                    document.querySelectorAll('.glass-panel[id$="DropdownMenu"]').forEach(m => m.style.display = 'none');
+                    menu.style.display = 'block';
+                    document.getElementById('siteSearchInput').value = '';
+                    this.renderSiteOptions(this.activeSites || []);
+                    document.getElementById('siteSearchInput').focus();
+                } else {
+                    menu.style.display = 'none';
+                }
+            },
+
+            filterSites() {
+                const query = document.getElementById('siteSearchInput').value.toLowerCase().trim();
+                if (!this.activeSites) return;
+
+                if (!query) {
+                    this.renderSiteOptions(this.activeSites);
+                    return;
+                }
+
+                const filtered = this.activeSites.filter(s => s.toLowerCase().includes(query));
+                this.renderSiteOptions(filtered);
+            },
+
+            renderSiteOptions(sites) {
+                const list = document.getElementById('siteOptionsList');
+                if (!list) return;
+
+                if (sites.length === 0) {
+                    list.innerHTML = `<div style="padding: 0.5rem; color: var(--text-dim); text-align: center; font-size: 0.85rem;">No sites found</div>`;
+                    return;
+                }
+
+                let html = '';
+                sites.forEach(s => {
+                    html += `
+                        <div class="site-option" onclick="TimerApp.selectSite('${(s || '').replace(/'/g, "\\'")}')" 
+                             style="padding: 0.5rem; cursor: pointer; border-radius: 4px; font-size: 0.85rem; color: var(--text-color);">
+                            ${s}
+                        </div>
+                    `;
+                });
+
+                list.innerHTML = html;
+                const options = list.querySelectorAll('.site-option');
+                options.forEach(opt => {
+                    opt.addEventListener('mouseover', () => opt.style.backgroundColor = 'rgba(255,255,255,0.05)');
+                    opt.addEventListener('mouseout', () => opt.style.backgroundColor = 'transparent');
+                });
+            },
+
+            selectSite(name) {
+                (document.getElementById('logSite')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}}).value = name;
+                (document.getElementById('selectedSiteText')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}}).innerText = name;
+                document.getElementById('siteDropdownMenu').style.display = 'none';
+            },
+
+            clearInputs() {
+                const els = [
+                    'logDescription', 'logProject', 'logSite', 'logClient', 'logTags',
+                    'logDate', 'logStartTime', 'logEndTime'
+                ];
+                els.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = '';
+                });
+
+                const pText = document.getElementById('selectedProjectText');
+                if (pText) pText.innerText = 'Select Project';
+                const sText = (document.getElementById('selectedSiteText')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}});
+                if (sText) sText.innerText = 'Select Site';
+                const cText = (document.getElementById('selectedClientText')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}});
+                if (cText) cText.innerText = 'Select Client';
+                const tText = document.getElementById('selectedTagText');
+                if (tText) tText.innerText = 'Select Tags';
+
+                const now = new Date();
+                const pad = n => String(n).padStart(2, '0');
+                const dateEl = document.getElementById('logDate');
+                if (dateEl) dateEl.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+            },
+
+            resetTimerUI() {
+                const toggleBtn = document.getElementById('toggleTimerBtn');
+                if (toggleBtn) {
+                    toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start';
+                    toggleBtn.className = 'timer-btn start';
+                }
+                const display = document.getElementById('runningTimeDisplay');
+                if (display) {
+                    display.style.display = 'none';
+                    display.textContent = '00:00:00';
+                }
+                this.clearInputs();
+            },
+
+
+            // --- MANUAL ADD ---
+            addManualLog() {
+                if (this.running) {
+                    alert("Please stop the active timer before adding a manual log.");
+                    return;
+                }
+
+                const desc = document.getElementById('logDescription').value.trim();
+                const projId = document.getElementById('logProject').value;
+                const site = (document.getElementById('logSite')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}}).value;
+                const dateInput = document.getElementById('logDate').value;
+                const startInput = document.getElementById('logStartTime').value;
+                const endInput = document.getElementById('logEndTime').value;
+                const manualDur = document.getElementById('logManualDuration') ? document.getElementById('logManualDuration').value : '';
+
+                if (!projId || !dateInput || (!startInput && !manualDur)) {
+                    alert("Please select a Project and provide Date, plus Start Time or Duration.");
+                    return;
+                }
+
+                if (startInput && endInput && startInput >= endInput && !manualDur) {
+                    alert("End time must be after Start time.");
+                    return;
+                }
+
+                let actualDuration = 0;
+                if (manualDur && manualDur.includes(':')) {
+                    const params = manualDur.split(':');
+                    actualDuration = ((parseInt(params[0]) || 0) * 60 + (parseInt(params[1]) || 0)) * 60000;
+                } else {
+                    actualDuration = this.calculateDurationMs(startInput, endInput);
+                }
+
+                const project = this.projects.find(p => String(p.id) === String(projId));
+                const clientId = (document.getElementById('logClient')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}}).value;
+                const clientName = (document.getElementById('selectedClientText')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}}).innerText;
+                const tagsStr = document.getElementById('logTags').value;
+                const tags = tagsStr ? tagsStr.split(',') : [];
+
+                const newLog = {
+                    id: Date.now(),
+                    userId: this.currentUser.id,
+                    userName: this.currentUser.name,
+                    description: desc,
+                    projectId: projId,
+                    projectName: project ? project.name : 'Unknown',
+                    projectNumber: project ? project.number : '',
+                    projectColor: project ? project.color : '#3b82f6',
+                    clientId: clientId,
+                    clientName: clientId ? clientName : '',
+                    tags: tags,
+                    site: site,
+                    date: dateInput,
+                    startTime: startInput || '',
+                    endTime: endInput || '',
+                    durationMs: actualDuration
+                };
+
+                this.logs.unshift(newLog); // Add to beginning
+                this.saveData();
+                this.renderLogs();
+                this.clearInputs();
+                if (window.showSuccess) window.showSuccess("Time log added manually.");
+            },
+
+            toggleTimer() {
+                const descInput = document.getElementById('logDescription');
+                const projSelect = document.getElementById('logProject');
+
+                if (!this.running) {
+                    // Start Timer
+                    if (!projSelect.value) {
+                        alert("Please select a Project before starting the timer.");
+                        return;
+                    }
+
+                    this.running = true;
+                    this.startTime = Date.now();
+
+                    // UI changes
+                    const toggleBtn = document.getElementById('toggleTimerBtn');
+                    toggleBtn.innerHTML = '<i class="fa-solid fa-square"></i> Stop';
+                    toggleBtn.className = 'timer-btn stop';
+
+                    // Save active session
+                    const activeData = {
+                        userId: this.currentUser.id,
+                        startTime: this.startTime,
+                        description: descInput.value.trim(),
+                        projectId: projSelect.value,
+                        clientId: (document.getElementById('logClient')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}}).value,
+                        tags: document.getElementById('logTags').value,
+                        site: (document.getElementById('logSite')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}}).value
+                    };
+                    localStorage.setItem('gravityHrActiveTimer', JSON.stringify(activeData));
+
+                    this.timerInterval = setInterval(() => this.updateTimerDisplay(), 1000);
+                    this.updateTimerDisplay();
+
+                } else {
+                    // Stop Timer
+                    clearInterval(this.timerInterval);
+                    this.running = false;
+
+                    const endTime = Date.now();
+                    const activeData = JSON.parse(localStorage.getItem('gravityHrActiveTimer'));
+                    localStorage.removeItem('gravityHrActiveTimer');
+
+                    this.resetTimerUI();
+
+                    if (activeData) {
+                        const startD = new Date(activeData.startTime);
+                        const endD = new Date(endTime);
+
+                        const formatTime = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                        const formatDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+                        const p = this.projects.find(proj => String(proj.id) === String(activeData.projectId));
+                        const client = this.clients.find(c => String(c.id) === String(activeData.clientId));
+                        const tags = activeData.tags ? activeData.tags.split(',') : [];
+
+                        const newLog = {
+                            id: Date.now(),
+                            userId: this.currentUser.id,
+                            userName: this.currentUser.name,
+                            description: activeData.description,
+                            projectId: activeData.projectId,
+                            projectName: p ? p.name : 'Unknown',
+                            projectNumber: p ? p.number : '',
+                            projectColor: p ? p.color : '#3b82f6',
+                            clientId: activeData.clientId,
+                            clientName: client ? client.name : '',
+                            tags: tags,
+                            site: activeData.site,
+                            date: formatDate(startD),
+                            startTime: formatTime(startD),
+                            endTime: formatTime(endD),
+                            durationMs: endTime - activeData.startTime
+                        };
+
+                        this.logs.unshift(newLog);
+                        this.saveData();
+                        this.renderLogs();
+                        this.clearInputs();
+                        if (window.showSuccess) window.showSuccess("Timer stopped and logged successfully.");
+                    }
+                }
+            },
+
+            resumeTimer(activeData) {
+                this.running = true;
+                this.startTime = activeData.startTime;
+
+                // Restore inputs
+                document.getElementById('logDescription').value = activeData.description || '';
+                document.getElementById('logProject').value = activeData.projectId || '';
+                this.onProjectChange();
+
+                // Update Project Select UI display
+                const p = this.projects.find(proj => String(proj.id) === String(activeData.projectId));
+                if (p) {
+                    const projCodeText = p.number ? `<strong>${p.number}</strong> ` : '';
+                    document.getElementById('selectedProjectText').innerHTML = `${projCodeText}${p.name}`;
+                }
+
+                if (activeData.clientId) {
+                    const client = this.clients.find(c => String(c.id) === String(activeData.clientId));
+                    if (client) {
+                        (document.getElementById('logClient')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}}).value = client.id;
+                        (document.getElementById('selectedClientText')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}}).innerText = client.name;
+                    }
+                }
+
+                if (activeData.tags) {
+                    document.getElementById('logTags').value = activeData.tags;
+                    document.getElementById('selectedTagText').innerText = activeData.tags.replace(/,/g, ', ');
+                }
+
+                if (activeData.site) {
+                    (document.getElementById('logSite')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}}).value = activeData.site;
+                    (document.getElementById('selectedSiteText')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}}).innerText = activeData.site;
+                }
+
+                // UI changes
+                const toggleBtn = document.getElementById('toggleTimerBtn');
+                toggleBtn.innerHTML = '<i class="fa-solid fa-square"></i> Stop';
+                toggleBtn.className = 'timer-btn stop';
+
+                this.timerInterval = setInterval(() => this.updateTimerDisplay(), 1000);
+                this.updateTimerDisplay();
+            },
+
+            updateTimerDisplay() {
+                const now = Date.now();
+                const diffMs = now - this.startTime;
+                document.getElementById('runningTimeDisplay').textContent = this.formatDurationMs(diffMs);
+
+                // Update Today Total live
+                const today = this.getTodayDate();
+                const todayTotalEl = document.getElementById('today-total-display');
+                if (todayTotalEl) {
+                    const todayLogsTotal = this.calculateDayTotal(today);
+                    todayTotalEl.textContent = this.formatDurationMs(todayLogsTotal + diffMs);
+                }
+
+                // Update Week Total live
+                const weekTotalEl = document.getElementById('week-total-display');
+                if (weekTotalEl) {
+                    const weekLogsTotal = this.calculateWeekTotal();
+                    weekTotalEl.textContent = this.formatDurationMs(weekLogsTotal + diffMs);
+                }
+            },
+
+            calculateDayTotal(dateStr) {
+                if (!this.logs) return 0;
+                return this.logs
+                    .filter(l => l.date === dateStr && String(l.userId) === String(this.currentUser.id))
+                    .reduce((sum, l) => sum + (l.durationMs || 0), 0);
+            },
+
+            calculateWeekTotal() {
+                if (!this.logs) return 0;
+                const today = new Date();
+                const day = today.getDay();
+                const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Monday is start
+                const monday = new Date(today.setDate(diff));
+                monday.setHours(0, 0, 0, 0);
+
+                return this.logs
+                    .filter(l => {
+                        const logDate = new Date(l.date);
+                        return logDate >= monday && String(l.userId) === String(this.currentUser.id);
+                    })
+                    .reduce((sum, l) => sum + (l.durationMs || 0), 0);
+            },
+
+            resetTimerUI() {
+                const toggleBtn = document.getElementById('toggleTimerBtn');
+                toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start';
+                toggleBtn.className = 'timer-btn start';
+                document.getElementById('runningTimeDisplay').textContent = '00:00:00';
+            },
+
+            clearInputs() {
+                document.getElementById('logDescription').value = '';
+                document.getElementById('logProject').value = '';
+                document.getElementById('selectedProjectText').innerHTML = 'Select Project';
+                (document.getElementById('logSite')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}}).value = '';
+                (document.getElementById('selectedSiteText')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}}).innerText = 'Select Site';
+                document.getElementById('logDate').value = '';
+                document.getElementById('logStartTime').value = '';
+                document.getElementById('logEndTime').value = '';
+            },
+
+            // --- HELPERS ---
+            calculateDurationMs(startStr, endStr) {
+                const [sH, sM] = startStr.split(':').map(Number);
+                const [eH, eM] = endStr.split(':').map(Number);
+                let diffMins = (eH * 60 + eM) - (sH * 60 + sM);
+                if (diffMins < 0) diffMins = 0;
+                return diffMins * 60 * 1000;
+            },
+
+            formatDurationMs(ms) {
+                if (!ms || ms < 0) return '00:00:00';
+                let totalSeconds = Math.floor(ms / 1000);
+                const hours = Math.floor(totalSeconds / 3600);
+                totalSeconds %= 3600;
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                const pad = n => String(n).padStart(2, '0');
+                return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+            },
+
+            formatDate(dateStr) {
+                if (!dateStr) return '';
+                const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                // Manual parse to avoid browser/locale inconsistencies
+                const parts = String(dateStr).split('-');
+                if (parts.length === 3) {
+                    const y = parts[0];
+                    const mIdx = parseInt(parts[1]) - 1;
+                    const d = parseInt(parts[2]);
+                    if (mIdx >= 0 && mIdx < 12) {
+                        return `${d} ${months[mIdx]} ${y}`;
+                    }
+                }
+                // Fallback for invalid dateStr or parts.length != 3
+                const d = new Date(dateStr);
+                if (!isNaN(d.getTime())) {
+                    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+                }
+                return dateStr; // Return original string if all else fails
+            },
+
+            formatDurationShort(ms) {
+                return this.formatDurationMs(ms);
+            },
+
+            formatDateLabel(dateStr) {
+                const today = new Date();
+                const yest = new Date(today);
+                yest.setDate(yest.getDate() - 1);
+
+                const pad = n => String(n).padStart(2, '0');
+
+                const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+                const yestStr = `${yest.getFullYear()}-${pad(yest.getMonth() + 1)}-${pad(yest.getDate())}`;
+
+                if (dateStr === todayStr) return "Today";
+                if (dateStr === yestStr) return "Yesterday";
+
+                return this.formatDate(dateStr);
+            },
+
+            getTodayDate() {
+                const today = new Date();
+                const pad = n => String(n).padStart(2, '0');
+                return `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+            },
+
+            // --- RENDERING LOGS ---
+            renderLogs() {
+                const container = document.getElementById('logsContainer');
+                if (!container) return;
+
+                let userLogs = this.logs.filter(l => String(l.userId) === String(this.currentUser.id));
+
+                const groups = {};
+                userLogs.forEach(log => {
+                    if (!groups[log.date]) groups[log.date] = { totalMs: 0, items: [] };
+                    groups[log.date].items.push(log);
+                    groups[log.date].totalMs += (log.durationMs || 0);
+                });
+
+                const sortedDates = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+
+                const todayStr = this.getTodayDate();
+                const now = Date.now();
+                const activeDiff = this.running ? (now - this.startTime) : 0;
+                const weekTotal = this.calculateWeekTotal() + activeDiff;
+
+                let html = `
+                    <div class="week-total-container">
+                        <span class="week-total-label">Week total:</span>
+                        <span class="week-total-value" id="week-total-display">${this.formatDurationMs(weekTotal)}</span>
+                    </div>
+                `;
+
+                if (sortedDates.length === 0) {
+                    html += `<div class="glass-panel" style="padding: 3rem; text-align: center; color: var(--text-dim); margin-top: 1rem;">No logs found. Start tracking to see your progress!</div>`;
+                    container.innerHTML = html;
+                    return;
+                }
+
+                sortedDates.forEach(date => {
+                    const group = groups[date];
+                    const isToday = (date === todayStr);
+                    const displayTotal = isToday ? group.totalMs + activeDiff : group.totalMs;
+
+                    html += `
+                        <div class="glass-panel log-day-panel">
+                            <div class="log-day-header">
+                                <h3><i class="fa-regular fa-calendar"></i> ${this.formatDateLabel(date)}</h3>
+                                <div class="log-day-total">Total: <span ${isToday ? 'id="today-total-display"' : ''}>${this.formatDurationMs(displayTotal)}</span></div>
+                            </div>
+                            <table class="log-table">
+                                <thead>
+                                    <tr>
+                                        <th>Description</th>
+                                        <th>Project</th>
+                                        <th>Tags</th>
+                                        <th>Date</th>
+                                        <th>Start</th>
+                                        <th>End</th>
+                                        <th style="text-align: right;">Duration</th>
+                                        <th style="text-align: center;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+
+                    group.items.sort((a, b) => (b.startTime || '').localeCompare(a.startTime || '')).forEach(log => {
+                        html += `
+                            <tr data-id="${log.id}">
+                                <td class="editable" data-field="description" ondblclick="TimerApp.activateInlineEdit(event, this)">${log.description || '-'}</td>
+                                <td class="editable" data-field="projectId" data-val="${log.projectId}" ondblclick="TimerApp.activateInlineEdit(event, this)">
+                                    <span style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <span style="width: 8px; height: 8px; border-radius: 50%; background: ${log.projectColor || 'var(--primary-color)'};"></span>
+                                        ${(log.projectNumber && log.projectNumber !== 'undefined') ? '<strong>' + log.projectNumber + '</strong> ' : ''}${log.projectName}
+                                    </span>
+                                </td>
+                                <td class="editable" data-field="tags" data-val="${(log.tags || []).join(',')}" ondblclick="TimerApp.activateInlineEdit(event, this)">
+                                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                        ${(log.tags && log.tags.length > 0) ? log.tags.map(t => `<span class="tag-pill" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: rgba(99, 102, 241, 0.1); color: var(--primary-color); border: 1px solid rgba(99, 102, 241, 0.2);">${t}</span>`).join('') : '-'}
+                                    </div>
+                                </td>
+                                <td class="editable" data-field="date" ondblclick="TimerApp.activateInlineEdit(event, this)">${log.date}</td>
+                                <td class="editable" data-field="startTime" ondblclick="TimerApp.activateInlineEdit(event, this)">${log.startTime}</td>
+                                <td class="editable" data-field="endTime" ondblclick="TimerApp.activateInlineEdit(event, this)">${log.endTime}</td>
+                                <td style="text-align: right; font-weight: 500; font-family: monospace;">${this.formatDurationMs(log.durationMs)}</td>
+                                <td style="text-align: center;">
+                                    <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
+                                        <button class="btn-delete" title="Restart" onclick="event.stopPropagation(); TimerApp.restartLog(${log.id})">
+                                            <i class="fa-solid fa-play"></i>
+                                        </button>
+                                        <div class="action-menu-container">
+                                            <button class="btn-action-trigger" onclick="event.stopPropagation(); TimerApp.toggleRowMenu(event, ${log.id})">
+                                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                                            </button>
+                                            <div class="action-dropdown glass-panel" id="action-menu-${log.id}" style="padding: 0.5rem 0; min-width: 140px; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); background: #ffffff !important; border: 1px solid rgba(0,0,0,0.1); animation: none !important; transition: none !important;">
+                                                <div class="action-item" onclick="TimerApp.splitLog(${log.id})" style="padding: 0.5rem 1.2rem; color: #4b5563; font-size: 0.9rem; font-weight: 500; cursor: pointer;">
+                                                    Split
+                                                </div>
+                                                <div class="action-item" onclick="TimerApp.duplicateLog(${log.id})" style="padding: 0.5rem 1.2rem; color: #4b5563; font-size: 0.9rem; font-weight: 500; cursor: pointer;">
+                                                    Duplicate
+                                                </div>
+                                                <div class="action-item" onclick="TimerApp.deleteLog(${log.id})" style="padding: 0.5rem 1.2rem; color: #ef4444; font-size: 0.9rem; font-weight: 500; cursor: pointer;">
+                                                    Delete
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    html += `</tbody></table></div>`;
+                });
+
+                container.innerHTML = html;
+
+                // Global listener to close action menus (ensure single attachment)
+                if (!window.actionMenuListenerAdded) {
+                    document.addEventListener('click', () => {
+                        document.querySelectorAll('.action-dropdown').forEach(d => d.style.display = 'none');
+                    });
+                    
+                    // Close menus tightly on scroll to avoid detached fixed menus
+                    window.addEventListener('scroll', (e) => {
+                        if (window.isMenuOpening) return; // Prevent layout shift instant-close
+                        if (e.target && e.target.closest && e.target.closest('.action-dropdown')) return;
+                        document.querySelectorAll('.action-dropdown').forEach(d => d.style.display = 'none');
+                    }, true);
+
+                    // Add hover effect style dynamically for the new dropdown items
+                    const style = document.createElement('style');
+                    style.innerHTML = '.action-dropdown .action-item:hover { background-color: rgba(0,0,0,0.05); }';
+                    document.head.appendChild(style);
+
+                    window.actionMenuListenerAdded = true;
+                }
+            },
+
+            // --- INLINE EDITING ---
+            activateInlineEdit(event, cell) {
+                if (cell.classList.contains('editing-cell')) return;
+
+                // Save previous if any
+                const existingInput = document.querySelector('.inline-edit-input');
+                if (existingInput) {
+                    // Try to save or cancel? Cancelling is safer if we don't have the context here easily.
+                    // But usually, blur handles it.
+                }
+
+                cell.classList.add('editing-cell');
+                const row = cell.closest('tr');
+                const logId = parseInt(row.dataset.id);
+                const field = cell.dataset.field;
+                const currentVal = (field === 'projectId') ? cell.dataset.val : cell.innerText.trim();
+
+                let inputHtml = '';
+                if (field === 'description') {
+                    inputHtml = `<input type="text" class="inline-edit-input" value="${currentVal === '-' ? '' : currentVal}" style="width: 100%; height: 30px; padding: 0.2rem; border-radius: 4px; border: 1px solid var(--primary-color); background: var(--input-bg); color: var(--text-color);">`;
+                } else if (field === 'clientId') {
+                    const client = this.clients.find(c => (c.id || c.name) == currentVal);
+                    const clientName = client ? client.name : 'Select Client';
+                    inputHtml = `
+                        <input type="hidden" class="inline-edit-input" value="${currentVal}">
+                        <div class="custom-select-trigger" onclick="TimerApp.toggleRowDropdown(event, 'client', ${logId})"
+                            style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: var(--input-bg); border: 1px solid var(--primary-color); border-radius: 4px; padding: 2px 8px; height: 30px; color: var(--text-color); font-size: 0.85rem;">
+                            <span class="selected-text">${clientName}</span>
+                            <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem;"></i>
+                        </div>
+                        <div class="row-dropdown glass-panel" id="row-client-menu-${logId}"
+                            style="display: none; position: absolute; top: 100%; left: 0; min-width: 180px; z-index: 1000; padding: 5px; border: 1px solid var(--dropdown-border); background: var(--dropdown-bg) !important;">
+                            <input type="text" placeholder="Search..." oninput="TimerApp.filterRowDropdown(event, 'client', ${logId})"
+                                style="width: 100%; padding: 4px; margin-bottom: 4px; border-radius: 4px; border: 1px solid var(--dropdown-border); background: var(--dropdown-search-bg); color: var(--text-color); font-size: 0.8rem;">
+                            <div class="options-list" style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;"></div>
+                        </div>
+                    `;
+                } else if (field === 'projectId') {
+                    const project = this.projects.find(p => p.id == currentVal);
+                    const projName = project ? project.name : 'Select Project';
+                    inputHtml = `
+                        <input type="hidden" class="inline-edit-input" value="${currentVal}">
+                        <div class="custom-select-trigger" onclick="TimerApp.toggleRowDropdown(event, 'project', ${logId})"
+                            style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: var(--input-bg); border: 1px solid var(--primary-color); border-radius: 4px; padding: 2px 8px; height: 30px; color: var(--text-color); font-size: 0.85rem;">
+                            <span class="selected-text">${projName}</span>
+                            <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem;"></i>
+                        </div>
+                        <div class="row-dropdown glass-panel" id="row-project-menu-${logId}"
+                            style="display: none; position: absolute; top: 100%; left: 0; min-width: 200px; z-index: 1000; padding: 5px; border: 1px solid var(--dropdown-border); background: var(--dropdown-bg) !important;">
+                            <input type="text" placeholder="Search..." oninput="TimerApp.filterRowDropdown(event, 'project', ${logId})"
+                                style="width: 100%; padding: 4px; margin-bottom: 4px; border-radius: 4px; border: 1px solid var(--dropdown-border); background: var(--dropdown-search-bg); color: var(--text-color); font-size: 0.8rem;">
+                            <div class="options-list" style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;"></div>
+                        </div>
+                    `;
+                } else if (field === 'tags') {
+                    inputHtml = `
+                        <input type="hidden" class="inline-edit-input" value="${currentVal}">
+                        <div class="custom-select-trigger" onclick="TimerApp.toggleRowDropdown(event, 'tags', ${logId})"
+                            style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: var(--input-bg); border: 1px solid var(--primary-color); border-radius: 4px; padding: 2px 8px; height: 30px; color: var(--text-color); font-size: 0.85rem;">
+                            <span class="selected-text">${currentVal ? currentVal.replace(/,/g, ', ') : 'Select Tags'}</span>
+                            <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem;"></i>
+                        </div>
+                        <div class="row-dropdown glass-panel" id="row-tags-menu-${logId}"
+                            style="display: none; position: absolute; top: 100%; left: 0; min-width: 180px; z-index: 1000; padding: 5px; border: 1px solid var(--dropdown-border); background: var(--dropdown-bg) !important;">
+                            <input type="text" placeholder="Search..." oninput="TimerApp.filterRowDropdown(event, 'tags', ${logId})"
+                                style="width: 100%; padding: 4px; margin-bottom: 4px; border-radius: 4px; border: 1px solid var(--dropdown-border); background: var(--dropdown-search-bg); color: var(--text-color); font-size: 0.8rem;">
+                            <div class="options-list" style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;"></div>
+                        </div>
+                    `;
+                } else if (field === 'site') {
+                    const currentSite = currentVal === '-' ? '' : currentVal;
+                    inputHtml = `
+                        <input type="hidden" class="inline-edit-input" value="${currentSite}">
+                        <div class="custom-select-trigger" onclick="TimerApp.toggleRowDropdown(event, 'site', ${logId})"
+                            style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: var(--input-bg); border: 1px solid var(--primary-color); border-radius: 4px; padding: 2px 8px; height: 30px; color: var(--text-color); font-size: 0.85rem;">
+                            <span class="selected-text">${currentSite || 'Select Site'}</span>
+                            <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem;"></i>
+                        </div>
+                        <div class="row-dropdown glass-panel" id="row-site-menu-${logId}"
+                            style="display: none; position: absolute; top: 100%; left: 0; min-width: 150px; z-index: 1000; padding: 5px; border: 1px solid var(--dropdown-border); background: var(--dropdown-bg) !important;">
+                            <input type="text" placeholder="Search..." oninput="TimerApp.filterRowDropdown(event, 'site', ${logId})"
+                                style="width: 100%; padding: 4px; margin-bottom: 4px; border-radius: 4px; border: 1px solid var(--dropdown-border); background: var(--dropdown-search-bg); color: var(--text-color); font-size: 0.8rem;">
+                            <div class="options-list" style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;"></div>
+                        </div>
+                    `;
+                } else if (field === 'date') {
+                    inputHtml = `<input type="date" class="inline-edit-input" value="${currentVal}" style="width: 100%; height: 30px; border-radius: 4px; border: 1px solid var(--primary-color); background: var(--input-bg); color: var(--text-color);">`;
+                } else if (field === 'startTime' || field === 'endTime') {
+                    inputHtml = `<input type="time" class="inline-edit-input" value="${currentVal}" style="width: 100%; height: 30px; border-radius: 4px; border: 1px solid var(--primary-color); background: var(--input-bg); color: var(--text-color);">`;
+                }
+
+                // Add Actions
+                inputHtml += `
+                    <div style="display: flex; gap: 4px; margin-top: 5px; justify-content: flex-end;">
+                        <button onclick="event.stopPropagation(); TimerApp.saveInlineEdit(${logId}, '${field}', this.parentElement.parentElement)" style="background: #22c55e; border: none; color: white; border-radius: 4px; padding: 2px 8px; cursor: pointer;"><i class="fa-solid fa-check"></i></button>
+                        <button onclick="event.stopPropagation(); TimerApp.renderLogs()" style="background: #ef4444; border: none; color: white; border-radius: 4px; padding: 2px 8px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                `;
+
+                cell.innerHTML = inputHtml;
+                const input = cell.querySelector('input:not([type="hidden"])');
+                if (input) {
+                    input.focus();
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') TimerApp.saveInlineEdit(logId, field, cell);
+                        if (e.key === 'Escape') TimerApp.renderLogs();
+                    });
+                }
+            },
+
+            saveInlineEdit(id, field, cell) {
+                const logIndex = this.logs.findIndex(l => l.id === id);
+                if (logIndex === -1) return;
+
+                const input = cell.querySelector('.inline-edit-input');
+                if (!input) return;
+
+                const val = input.value;
+                const log = this.logs[logIndex];
+
+                if (field === 'clientId') {
+                    const client = this.clients.find(c => (c.id || c.name) == val);
+                    if (client) {
+                        log.clientId = client.id || client.name;
+                        log.clientName = client.name;
+                    }
+                } else if (field === 'projectId') {
+                    const proj = this.projects.find(p => p && String(p.id) === String(val));
+                    if (proj) {
+                        log.projectId = proj.id;
+                        log.projectName = proj.name;
+                        log.projectNumber = proj.number || '';
+                        log.projectColor = proj.color || '#6366f1';
+                        
+                        // If project has a clientId, update log.clientId as well (optional but consistent)
+                        if (proj.clientId) {
+                            const client = this.clients.find(c => String(c.id) === String(proj.clientId));
+                            if (client) {
+                                log.clientId = client.id;
+                                log.clientName = client.name;
+                            }
+                        }
+                    }
+                } else if (field === 'tags') {
+                    log.tags = val ? val.split(',') : [];
+                } else if (field === 'site') {
+                    log.site = val;
+                } else if (field === 'startTime' || field === 'endTime') {
+                    log[field] = val;
+                    log.durationMs = this.calculateDurationMs(log.startTime, log.endTime);
+                } else {
+                    log[field] = val;
+                }
+
+                this.saveData();
+                this.renderLogs();
+            },
+
+
+
+            // --- INLINE DROPDOWN LOGIC ---
+            toggleRowDropdown(e, type, logId) {
+                e.stopPropagation();
+                const menu = document.getElementById(`row-${type}-menu-${logId}`);
+                const isHidden = menu.style.display === 'none';
+
+                // Close all other row dropdowns first
+                document.querySelectorAll('.row-dropdown').forEach(m => {
+                    if (m.id !== `row-${type}-menu-${logId}`) m.style.display = 'none';
+                });
+
+                if (isHidden) {
+                    menu.style.display = 'block';
+                    const search = menu.querySelector('input');
+                    search.value = '';
+                    this.renderRowOptions(type, logId, '');
+                    search.focus();
+                } else {
+                    menu.style.display = 'none';
+                }
+            },
+
+            filterRowDropdown(e, type, logId) {
+                this.renderRowOptions(type, logId, e.target.value.toLowerCase().trim());
+            },
+
+            renderRowOptions(type, logId, query) {
+                const menu = document.getElementById(`row-${type}-menu-${logId}`);
+                const list = menu.querySelector('.options-list');
+                let html = '';
+
+                if (type === 'project') {
+                    const filtered = this.projects.filter(p =>
+                        p && p.status !== 'Completed' &&
+                        (p.name.toLowerCase().includes(query) || (p.number && p.number.toLowerCase().includes(query)))
+                    );
+                    if (filtered.length === 0) {
+                        html = '<div style="padding: 5px; color: var(--text-dim); text-align: center; font-size: 0.8rem;">No projects</div>';
+                    } else {
+                        filtered.forEach(p => {
+                            html += `
+                                <div onclick="TimerApp.selectRowOption('project', ${logId}, '${p.id}', '${(p.name || '').replace(/'/g, "\\'")}')"
+                                     style="padding: 6px; cursor: pointer; border-radius: 4px; font-size: 0.8rem; color: var(--text-color);">
+                                    ${p.name}
+                                </div>
+                            `;
+                        });
+                    }
+                } else if (type === 'client') {
+                    const filtered = this.clients.filter(c => c.name.toLowerCase().includes(query));
+                    if (filtered.length === 0) {
+                        html = '<div style="padding: 5px; color: var(--text-dim); text-align: center; font-size: 0.8rem;">No clients</div>';
+                    } else {
+                        filtered.forEach(c => {
+                            html += `
+                                <div onclick="TimerApp.selectRowOption('client', ${logId}, '${c.id || c.name}', '${(c.name || '').replace(/'/g, "\\'")}')"
+                                     style="padding: 6px; cursor: pointer; border-radius: 4px; font-size: 0.8rem; color: var(--text-color);">
+                                    ${c.name}
+                                </div>
+                            `;
+                        });
+                    }
+                } else if (type === 'tags') {
+                    const filtered = this.tags.filter(t => t.name.toLowerCase().includes(query));
+                    // Checkbox list for tags
+                    const row = document.querySelector(`tr[data-id="${logId}"]`);
+                    const currentTags = row.querySelector('[data-field="tags"] input').value.split(',').filter(Boolean);
+
+                    if (filtered.length === 0) {
+                        html = '<div style="padding: 5px; color: var(--text-dim); text-align: center; font-size: 0.8rem;">No tags</div>';
+                    } else {
+                        filtered.forEach(t => {
+                            const isSelected = currentTags.includes(t.name);
+                            html += `
+                                <div onclick="TimerApp.toggleRowTagSelection(event, ${logId}, '${(t.name || '').replace(/'/g, "\\'")}')"
+                                     style="padding: 6px; cursor: pointer; border-radius: 4px; font-size: 0.8rem; color: var(--text-color); display: flex; justify-content: space-between; align-items: center;">
+                                    <span>${t.name}</span>
+                                    ${isSelected ? '<i class="fa-solid fa-check" style="color: var(--primary-color);"></i>' : ''}
+                                </div>
+                            `;
+                        });
+                    }
+                } else if (type === 'site') {
+                    // We need the CURRENT project being edited in the row, not the one in the log
+                    const row = document.querySelector(`tr[data-id="${logId}"]`);
+                    const projId = row.querySelector('[data-field="projectId"] input').value;
+                    const project = this.projects.find(p => p.id == projId);
+                    const sites = (project && project.sites) ? project.sites : [];
+                    const filtered = sites.filter(s => s.toLowerCase().includes(query));
+
+                    if (filtered.length === 0) {
+                        html = '<div style="padding: 5px; color: var(--text-dim); text-align: center; font-size: 0.8rem;">No sites</div>';
+                    } else {
+                        filtered.forEach(s => {
+                            html += `
+                                <div onclick="TimerApp.selectRowOption('site', ${logId}, '${s}', '${(s || '').replace(/'/g, "\\'")}')"
+                                     style="padding: 6px; cursor: pointer; border-radius: 4px; font-size: 0.8rem; color: var(--text-color);">
+                                    ${s}
+                                </div>
+                            `;
+                        });
+                    }
+                }
+
+                list.innerHTML = html;
+                list.querySelectorAll('div[onclick]').forEach(opt => {
+                    opt.addEventListener('mouseover', () => opt.style.backgroundColor = 'var(--dropdown-hover)');
+                    opt.addEventListener('mouseout', () => opt.style.backgroundColor = 'transparent');
+                });
+            },
+
+            selectRowOption(type, logId, val, name) {
+                const cell = document.querySelector(`tr[data-id="${logId}"] td[data-field="${type === 'project' ? 'projectId' : (type === 'client' ? 'clientId' : 'site')}"]`);
+                const input = cell.querySelector('input[type="hidden"]');
+                const triggerText = cell.querySelector('.selected-text');
+
+                input.value = val;
+                triggerText.innerText = name;
+                document.getElementById(`row-${type}-menu-${logId}`).style.display = 'none';
+
+                if (type === 'project') {
+                    // Update client if project has one
+                    const project = this.projects.find(p => String(p.id) === String(val));
+                    if (project && project.clientId) {
+                        const client = this.clients.find(c => String(c.id) === String(project.clientId));
+                        if (client) {
+                            const clientCell = document.querySelector(`tr[data-id="${logId}"] td[data-field="clientId"]`);
+                            if (clientCell) {
+                                clientCell.querySelector('input[type="hidden"]').value = client.id;
+                                clientCell.querySelector('.selected-text').innerText = client.name;
+                            }
+                        }
+                    }
+
+                    // Update site to "Select Site" if project changes
+                    const siteCell = document.querySelector(`tr[data-id="${logId}"] td[data-field="site"]`);
+                    if (siteCell) {
+                        siteCell.querySelector('input[type="hidden"]').value = '';
+                        siteCell.querySelector('.selected-text').innerText = 'Select Site';
+                    }
+                }
+            },
+
+            toggleRowTagSelection(e, logId, tagName) {
+                e.stopPropagation();
+                const cell = document.querySelector(`tr[data-id="${logId}"] td[data-field="tags"]`);
+                const input = cell.querySelector('input[type="hidden"]');
+                const triggerText = cell.querySelector('.selected-text');
+
+                let tags = input.value ? input.value.split(',') : [];
+                if (tags.includes(tagName)) {
+                    tags = tags.filter(t => t !== tagName);
+                } else {
+                    tags.push(tagName);
+                }
+                
+                input.value = tags.join(',');
+                triggerText.innerText = tags.length > 0 ? tags.join(', ') : 'Select Tags';
+                
+                // Re-render row options to show checkmark
+                this.renderRowOptions('tags', logId, '');
+            },
+
+            // --- SEARCHABLE FILTER DROPDOWN LOGIC (Summary/Report) ---
+            toggleSearchDropdown(e, menuId, inputId) {
+                e.stopPropagation();
+                const menu = document.getElementById(menuId);
+                const isHidden = window.getComputedStyle(menu).display === 'none';
+
+                // Close all other search dropdowns
+                document.querySelectorAll('.search-dropdown').forEach(m => {
+                    if (m.id !== menuId) m.style.display = 'none';
+                });
+
+                if (isHidden) {
+                    menu.style.display = 'flex';
+                    const input = document.getElementById(inputId);
+                    input.value = '';
+                    const listId = menu.querySelector('.search-options-list').id;
+                    const type = listId.includes('Client') ? 'client' : (listId.includes('Project') ? 'project' : 'employee');
+                    const target = listId.startsWith('summary') ? 'summary' : 'report';
+                    this.renderSearchOptions(listId, type, '', target);
+                    input.focus();
+                } else {
+                    menu.style.display = 'none';
+                }
+            },
+
+            filterSearchDropdown(val, listId, type, target) {
+                this.renderSearchOptions(listId, type, val.toLowerCase().trim(), target);
+            },
+
+            renderSearchOptions(listId, type, query, target) {
+                const list = document.getElementById(listId);
+                const filterId = `${target}${type.charAt(0).toUpperCase() + type.slice(1)}Filter`;
+                const currentValue = document.getElementById(filterId).value;
+                
+                let options = [];
+                let html = `
+                    <div class="search-option ${currentValue === '' ? 'selected' : ''}" onclick="TimerApp.selectSearchOption('${type}', '${target}', '', 'All ${type.charAt(0).toUpperCase() + type.slice(1)}s')">
+                        <span class="option-main">All ${type.charAt(0).toUpperCase() + type.slice(1)}s</span>
+                    </div>
+                `;
+
+                if (type === 'client') {
+                    // Extract unique clients from logs
+                    const clients = [...new Set(this.logs.map(l => l.clientName).filter(Boolean))].sort();
+                    options = clients.map(c => ({ id: c, name: c }));
+                } else if (type === 'project') {
+                    options = this.projects.map(p => ({ id: p.id, name: p.name, number: p.number, color: p.color }));
+                } else if (type === 'employee') {
+                    // Extract unique employees from logs (for report/summary)
+                    const employees = [...new Set(this.logs.map(l => l.userName).filter(Boolean))].sort();
+                    options = employees.map(e => ({ id: e, name: e }));
+                } else if (type === 'tag') {
+                    // Extract unique tags from logs
+                    const tagsSet = new Set();
+                    this.logs.forEach(l => {
+                        if (l.tags) l.tags.forEach(t => tagsSet.add(t));
+                    });
+                    const uniqueTags = [...tagsSet].sort();
+                    options = uniqueTags.map(t => ({ id: t, name: t }));
+                }
+
+                const filtered = options.filter(o => o.name.toLowerCase().includes(query) || (o.number && o.number.toLowerCase().includes(query)));
+
+                if (filtered.length > 0) {
+                    html += `<div class="search-dropdown-header">Select ${type.charAt(0).toUpperCase() + type.slice(1)}</div>`;
+                    filtered.forEach(opt => {
+                        const isSelected = String(opt.id) === String(currentValue);
+                        html += `
+                            <div class="search-option ${isSelected ? 'selected' : ''}" onclick="TimerApp.selectSearchOption('${type}', '${target}', '${opt.id}', '${(opt.name || '').replace(/'/g, "\\'")}')">
+                                ${type === 'project' ? `<span class="project-dot" style="background: ${opt.color || 'var(--primary-color)'}"></span>` : ''}
+                                <div style="display: flex; flex-direction: column;">
+                                    <span class="option-main">${opt.number ? `[${opt.number}] ` : ''}${opt.name}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else if (query !== '') {
+                    html += '<div style="padding: 1rem; text-align: center; color: var(--text-dim); font-size: 0.85rem;">No results found</div>';
+                }
+
+                list.innerHTML = html;
+            },
+
+            selectSearchOption(type, target, id, name) {
+                const filterId = `${target}${type.charAt(0).toUpperCase() + type.slice(1)}Filter`;
+                const textId = `selected${target.charAt(0).toUpperCase() + target.slice(1)}${type.charAt(0).toUpperCase() + type.slice(1)}Text`;
+                const menuId = `${target}${type.charAt(0).toUpperCase() + type.slice(1)}DropdownMenu`;
+
+                document.getElementById(filterId).value = id;
+                document.getElementById(textId).innerText = name;
+                document.getElementById(menuId).style.display = 'none';
+
+                if (target === 'summary') this.updateSummary();
+                else this.updateReport();
+            },
+
+            toggleRowMenu(e, id) {
+                e.stopPropagation();
+                
+                const menu = document.getElementById(`action-menu-${id}`);
+                const isHidden = window.getComputedStyle(menu).display === 'none';
+
+                // Close all other menus
+                document.querySelectorAll('.action-dropdown').forEach(d => {
+                    d.style.display = 'none';
+                });
+
+                if (isHidden) {
+                    window.isMenuOpening = true; // Protect from synchronous scroll event
+                    
+                    // DOM PORTAL: Move the menu to the body to escape ALL CSS `backdrop-filter` containing block traps!
+                    if (menu.parentElement !== document.body) {
+                        document.body.appendChild(menu);
+                    }
+                    
+                    menu.style.display = 'block';
+                    
+                    // Break out of ALL layout constraints using Fixed viewport positioning bound to body
+                    const triggerBtn = document.querySelector(`tr[data-id="${id}"] .btn-action-trigger`);
+                    if (triggerBtn) {
+                        const rect = triggerBtn.getBoundingClientRect();
+                        menu.style.position = 'fixed';
+                        // Align the TOP of the menu with the TOP of the button so it opens "right there"
+                        menu.style.top = rect.top + 'px';
+                        // Align the RIGHT edge of the menu with the RIGHT edge of the button
+                        menu.style.left = (rect.right - 140) + 'px'; 
+                        menu.style.right = 'auto'; 
+                        menu.style.zIndex = '999999';
+                    }
+                    setTimeout(() => { window.isMenuOpening = false; }, 150);
+                }
+            },
+
+            duplicateLog(id) {
+                const log = this.logs.find(l => l.id === id);
+                if (!log) return;
+                const newLog = { ...log, id: Date.now() };
+                this.logs.push(newLog);
+                this.saveData();
+                this.renderLogs();
+            },
+
+            splitLog(id) {
+                const logIndex = this.logs.findIndex(l => l.id === id);
+                if (logIndex === -1) return;
+                const log = this.logs[logIndex];
+                
+                // Only allow split if more than 2 minutes (120,000 ms)
+                if (log.durationMs < 120000) {
+                    alert("Only logs longer than 2 minutes can be split.");
+                    return;
+                }
+                
+                const halfDuration = Math.floor(log.durationMs / 2);
+                log.durationMs = halfDuration;
+                
+                // For a more realistic split, we could adjust times, but duration change is what users usually want here
+                const newLog = { ...log, id: Date.now() + 1, durationMs: halfDuration };
+                this.logs.splice(logIndex + 1, 0, newLog);
+                
+                this.saveData();
+                this.renderLogs();
+            },
+
+            // --- EDIT / DELETE LOGS ---
+            deleteLog(id) {
+                if (!confirm('Are you sure you want to delete this time log?')) return;
+                this.logs = this.logs.filter(l => l.id !== id);
+                this.saveData();
+                this.renderLogs();
+            },
+
+            restartLog(id) {
+                const log = this.logs.find(l => l.id === id);
+                if (!log) return;
+
+                if (this.running) {
+                    alert("Please stop the active timer before restarting a previous log.");
+                    return;
+                }
+
+                // Fill inputs
+                document.getElementById('logDescription').value = log.description || '';
+                document.getElementById('logProject').value = log.projectId;
+                
+                // Update Project UI
+                const pNum = log.projectNumber ? '<strong>' + log.projectNumber + '</strong> ' : '';
+                document.getElementById('selectedProjectText').innerHTML = pNum + log.projectName;
+
+                // Handle site
+                this.onProjectChange();
+                if (log.site) {
+                    (document.getElementById('logSite')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}}).value = log.site;
+                    (document.getElementById('selectedSiteText')||{value:'', style:{}, innerText:'', classList:{add:()=>{}, remove:()=>{}}}).innerText = log.site;
+                }
+
+                // Start timer
+                this.toggleTimer();
+            },
+
+            showRowOptions(e, id) {
+                e.stopPropagation();
+                // Placeholder for additional row options
+            },
+
+            openEditModal(id) {
+                const log = this.logs.find(l => l.id === id);
+                if (!log) return;
+                this.editLogId = id;
+                document.getElementById('editLogDesc').value = log.description;
+                document.getElementById('editLogDate').value = log.date;
+                document.getElementById('editLogStart').value = log.startTime;
+                document.getElementById('editLogEnd').value = log.endTime;
+
+                const modal = document.getElementById('editLogModal');
+                modal.classList.add('active');
+                modal.style.display = 'flex';
+            },
+
+            closeEditModal() {
+                this.editLogId = null;
+                const modal = document.getElementById('editLogModal');
+                modal.classList.remove('active');
+                setTimeout(() => { modal.style.display = 'none'; }, 300);
+            },
+
+            saveEditedLog() {
+                // Now redundant, keeping as dummy to prevent errors if called elsewhere
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            TimerApp.init();
+
+            // Global click listener to close dropdowns
+            document.addEventListener('click', (e) => {
+                // Close searchable dropdowns if clicking outside
+                if (!e.target.closest('.custom-select-container')) {
+                    document.querySelectorAll('.search-dropdown').forEach(d => d.style.display = 'none');
+                }
+                
+                // Close action menus (from checkpoint 7 logic)
+                if (!e.target.closest('.action-menu-container') && !e.target.closest('.action-dropdown')) {
+                    document.querySelectorAll('.action-dropdown').forEach(d => d.style.display = 'none');
+                }
+
+                // Close row dropdowns
+                if (!e.target.closest('.row-dropdown-container')) {
+                    document.querySelectorAll('.row-dropdown').forEach(d => d.style.display = 'none');
+                }
+            });
+        });
+
+    </script>
+    <script src="script.js?v=2"></script>
+    <script src="js/mobile-nav.js"></script>
+</body>
+
+</html>

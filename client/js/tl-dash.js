@@ -16,12 +16,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentMonth = new Date().toISOString().slice(0, 7);
         dashTrafficMonthFilter.value = currentMonth;
 
-        if (typeof renderDashTrafficIntelligence === 'function') {
-            renderDashTrafficIntelligence(currentMonth);
+        if (typeof renderDashWorkHours === 'function') {
+            renderDashWorkHours(currentMonth);
         }
 
         dashTrafficMonthFilter.addEventListener('change', (e) => {
-            renderDashTrafficIntelligence(e.target.value);
+            renderDashWorkHours(e.target.value);
         });
     }
 });

@@ -4,5 +4,40 @@
 .manager-special-button {
     background: var(--primary-color);
     color: white;
-    /* Add more as needed */
+}
+
+/* Redesigned Charts Layout */
+@media (max-width: 1100px) {
+    .charts-grid {
+        grid-template-columns: 1fr !important;
+        gap: 3rem !important;
+    }
+    
+    .doughnut-chart-container {
+        padding-top: 2rem;
+        border-top: 1px solid rgba(255,255,255,0.05);
+    }
+}
+
+.chart-select {
+    transition: all 0.3s ease;
+}
+
+.chart-select:hover {
+    border-color: rgba(255,255,255,0.3) !important;
+    background: rgba(255,255,255,0.08) !important;
+}
+
+#updateChartBtn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#updateChartBtn:hover {
+    background: #7c3aed !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4) !important;
+}
+
+#updateChartBtn:active {
+    transform: translateY(0);
 }

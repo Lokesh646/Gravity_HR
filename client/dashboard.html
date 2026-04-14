@@ -78,7 +78,7 @@
                     <div style="display: flex; align-items: center; gap: 1.5rem;">
                         <div>
                             <h3 class="ios-section-title" style="margin: 0; font-size: 1.4rem; font-weight: 700;">
-                                Traffic Intelligence
+                                Work Hours Overview
                             </h3>
                         </div>
                     </div>
@@ -88,7 +88,7 @@
                             Month:</label>
                         <input type="month" id="dashTrafficMonthFilter" class="glass-input"
                             style="padding: 0.4rem; width: 150px;">
-                        <button class="btn-primary btn-sm" onclick="handleDashTrafficFilter()">Update</button>
+                        <button class="btn-primary btn-sm" onclick="handleDashWorkHoursFilter()">Update</button>
                     </div>
                 </div>
 
@@ -96,12 +96,12 @@
                     <div style="height: 350px; width: 100%; position: relative;">
                         <canvas id="trafficChart"></canvas>
                         <p style="text-align: center; font-size: 0.8rem; color: var(--text-dim); margin-top: 5px;">Daily
-                            Trend (Full Month)</p>
+                            Work Hours (Hours)</p>
                     </div>
                     <div style="height: 350px; width: 100%; position: relative;">
                         <canvas id="userContribChart"></canvas>
-                        <p style="text-align: center; font-size: 0.8rem; color: var(--text-dim); margin-top: 5px;">User
-                            Contribution</p>
+                        <p style="text-align: center; font-size: 0.8rem; color: var(--text-dim); margin-top: 5px;">
+                            Project Distribution (Hours)</p>
                     </div>
                 </div>
             </div>
@@ -274,7 +274,7 @@
     <script src="js/auth.js"></script>
     <script src="js/render-logic.js"></script>
     <script src="traffic-counter.js"></script>
-    <script src="script.js"></script>
+    <script src="script.js?v=2"></script>
     <script src="js/mobile-nav.js"></script>
 </body>
 

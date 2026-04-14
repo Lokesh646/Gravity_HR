@@ -306,6 +306,23 @@ window.initTrafficCounter = function () {
         if (typeof updateStats === 'function') {
           setTimeout(updateStats, 10);
         }
+
+        // AUTO-RESET AFTER SAVE
+        setTimeout(() => {
+          const rows = trafficCounterState.table.rows;
+          [...rows].forEach(row => {
+            [...row.cells].forEach((cell, i) => {
+              if (i > 0) cell.textContent = "0";
+            });
+          });
+          localStorage.removeItem("alienTrafficCounts");
+          trafficCounterState.sessionStartTime = Date.now();
+          trafficCounterState.currentRow = 0;
+          highlightRow();
+          if (typeof updateStats === 'function') {
+            setTimeout(updateStats, 10);
+          }
+        }, 1500); // Small delay to let user see success message
       };
 
       if (typeof showConfirm === 'function') {

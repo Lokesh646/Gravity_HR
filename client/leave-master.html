@@ -35,7 +35,7 @@
                     <i class="fa-solid fa-moon"></i>
                     <span>Dark Mode</span>
                 </button>
-                <button onclick="logout()" class="btn-secondary btn-sm"
+                <button onclick="Auth.logout()" class="btn-secondary btn-sm"
                     style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--input-bg); margin-top: 10px; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
                     <i class="fa-solid fa-right-from-bracket"></i>
                     <span>Logout</span>
@@ -54,35 +54,430 @@
 
         <!-- MAIN CONTENT AREA -->
         <main class="main-content">
-            <header class="section-header">
-                <div>
-                    <h2>Leave Balances</h2>
-                    <p>Manage employee leave quotas</p>
-                </div>
-                <a href="dashboard.html" class="btn-secondary btn-sm" style="text-decoration: none;">
-                    <i class="fa-solid fa-house"></i> Back to Dashboard
-                </a>
-            </header>
+            <!-- EMPLOYEE VIEW (Visible to everyone else) -->
+            <div id="employeeView" style="display: none;">
+                <header class="section-header">
+                    <div>
+                        <h2 id="employeeHeaderTitle">My Leave Master</h2>
+                        <p>View your balances, attendance, and apply for leaves</p>
+                    </div>
+                    <a href="dashboard.html" class="btn-secondary btn-sm" style="text-decoration: none; height: 38px; display: flex; align-items: center;">
+                        <i class="fa-solid fa-house"></i>
+                    </a>
+                </header>
 
-            <div class="glass-panel table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Employee Info</th>
-                            <th>Casual Leave</th>
-                            <th>Sick Leave</th>
-                            <th>Earned Leave</th>
-                            <th>Total Taken</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaveBalancesBody">
-                        <!-- Data injected by script.js -->
-                    </tbody>
-                </table>
+
+
+                <!-- Tab Navigation -->
+                <div class="glass-panel" style="padding: 1rem; margin-bottom: 2rem;">
+                    <div class="tab-nav-simple" style="display: flex; gap: 1rem;">
+                        <style>
+                            .tab-nav-simple .tab-btn-nav {
+                                padding: 0.75rem 1.5rem;
+                                border-radius: 8px;
+                                border: 1px solid transparent;
+                                background: transparent;
+                                color: var(--text-dim);
+                                cursor: pointer;
+                                transition: all 0.3s ease;
+                                display: flex;
+                                align-items: center;
+                                gap: 0.5rem;
+                                font-weight: 500;
+                            }
+                            .tab-nav-simple .tab-btn-nav.active {
+                                background: var(--primary-gradient, linear-gradient(135deg, var(--primary-color), var(--secondary-color)));
+                                color: white;
+                                box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+                            }
+                            .tab-nav-simple .tab-btn-nav.active::after {
+                                display: none !important;
+                            }
+                            .tab-nav-simple .tab-btn-nav:hover:not(.active) {
+                                background: rgba(255,255,255,0.05);
+                                border-color: var(--glass-border);
+                            }
+                            .calendar-grid {
+                                display: grid;
+                                grid-template-columns: repeat(7, 1fr);
+                                gap: 3px;
+                                margin-top: 6px;
+                            }
+                            .calendar-day {
+                                background: rgba(255,255,255,0.03);
+                                border-radius: 6px;
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                justify-content: center;
+                                padding: 4px 2px;
+                                position: relative;
+                                font-size: 0.7rem;
+                                border: 1px solid transparent;
+                                transition: all 0.2s;
+                                min-height: 32px;
+                            }
+                            .calendar-day:hover { background: rgba(255,255,255,0.06); }
+                            .calendar-day.other-month { opacity: 0.3; }
+                            .calendar-day .day-status {
+                                margin-top: 1px;
+                                font-weight: 800;
+                                font-size: 0.65rem;
+                                width: 100%;
+                                text-align: center;
+                            }
+                            /* Status Colors */
+                            .day-p { background: rgba(34, 197, 94, 0.1) !important; color: #22c55e !important; border: 1px solid rgba(34, 197, 94, 0.2) !important; }
+                            .day-a { background: rgba(245, 158, 11, 0.1) !important; color: #f59e0b !important; border: 1px solid rgba(245, 158, 11, 0.2) !important; }
+                            .day-half { background: rgba(239, 68, 68, 0.1) !important; color: #ef4444 !important; border: 1px solid rgba(239, 68, 68, 0.2) !important; }
+                            
+                            .calendar-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+
+                            /* Custom Scrollbar */
+                            .custom-scrollbar::-webkit-scrollbar {
+                                width: 5px;
+                            }
+                            .custom-scrollbar::-webkit-scrollbar-track {
+                                background: transparent;
+                            }
+                            .custom-scrollbar::-webkit-scrollbar-thumb {
+                                background: rgba(255,255,255,0.1);
+                                border-radius: 10px;
+                                transition: background 0.3s;
+                            }
+                            .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+                                background: rgba(99, 102, 241, 0.4);
+                            }
+                            #holidaysGrid .glass-panel {
+                                animation: holidayFadeIn 0.5s ease backwards;
+                            }
+                            @keyframes holidayFadeIn {
+                                from { opacity: 0; transform: translateY(10px); }
+                                to { opacity: 1; transform: translateY(0); }
+                            }
+                        </style>
+                        <button class="tab-btn-nav" id="tabBtnAllBalances" onclick="LeavesModule.switchTab('all-balances', this)" style="display: none;">
+                            <i class="fa-solid fa-users"></i> All Leave Balances
+                        </button>
+                        <button class="tab-btn-nav" onclick="LeavesModule.switchTab('balance', this)">
+                            <i class="fa-solid fa-wallet"></i> Leave Balance
+                        </button>
+                        <button class="tab-btn-nav" onclick="LeavesModule.switchTab('calendar', this)">
+                            <i class="fa-solid fa-calendar-days"></i> Attendance Calendar
+                        </button>
+                        <button class="tab-btn-nav" onclick="LeavesModule.switchTab('apply', this)">
+                            <i class="fa-solid fa-paper-plane"></i> Apply / Request
+                        </button>
+                        <button class="tab-btn-nav" onclick="LeavesModule.switchTab('holidays', this)">
+                            <i class="fa-solid fa-champagne-glasses"></i> Holidays
+                        </button>
+                        <button class="tab-btn-nav" onclick="LeavesModule.switchTab('history', this)">
+                            <i class="fa-solid fa-clock-rotate-left"></i> Leave Master History
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab content containers -->
+                <div id="tab-balance" class="tab-pane active">
+                    <div id="personalBalanceGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                        <!-- Injected by JS -->
+                    </div>
+                </div>
+
+                <div id="tab-calendar" class="tab-pane" style="display: none;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-start;">
+                        <div class="glass-panel" style="padding: 1rem 1.25rem; flex: 1; max-width: 480px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                <h3 id="personalCalMonthYear" style="margin: 0; font-size: 0.95rem;">Month Year</h3>
+                                <div style="display: flex; gap: 0.25rem;">
+                                    <button onclick="LeavesModule.changeCalendarMonth(-1)" class="btn-icon" style="width: 28px; height: 28px; font-size: 0.7rem;"><i class="fa-solid fa-chevron-left"></i></button>
+                                    <button onclick="LeavesModule.changeCalendarMonth(1)" class="btn-icon" style="width: 28px; height: 28px; font-size: 0.7rem;"><i class="fa-solid fa-chevron-right"></i></button>
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; text-align: center; font-weight: 600; color: var(--text-dim); margin-bottom: 4px; font-size: 0.7rem;">
+                                <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                            </div>
+                            <div id="personalCalendarGrid" class="calendar-grid">
+                                <!-- Injected by JS -->
+                            </div>
+                            <div class="calendar-legend" style="margin-top: 0.75rem; display: flex; gap: 1rem; font-size: 0.7rem; flex-wrap: wrap; justify-content: center; background: rgba(0,0,0,0.1); padding: 0.5rem 0.75rem; border-radius: 8px;">
+                                <div class="legend-item"><span class="dot" style="background: #22c55e;"></span> <strong>P</strong>: Present</div>
+                                <div class="legend-item"><span class="dot" style="background: #f59e0b;"></span> <strong>A</strong>: Absent</div>
+                                <div class="legend-item"><span class="dot" style="background: #ef4444;"></span> <strong>P:A / A:P</strong>: Half Day</div>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel" style="padding: 1.5rem; flex: 1; min-width: 300px; max-width: 400px; position: sticky; top: 1rem;">
+                            <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-clock"></i> Attendance Details</h3>
+                            <p id="attPanelDate" style="font-weight: 600; color: var(--primary-color); margin-bottom: 1rem;">Select a date to view history</p>
+                            
+                            <div id="attPanelLogs" style="background: rgba(0,0,0,0.1); border-radius: 8px; padding: 1rem; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 1rem; max-height: 250px; overflow-y: auto;">
+                                <p style="color:var(--text-dim)">Click a date on the calendar to load insights.</p>
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 1rem; border-top: 1px solid var(--glass-border); padding-top: 1rem; margin-bottom: 1.5rem;">
+                                <span>Total Working Hours:</span>
+                                <span id="attPanelTotalHrs" style="color: var(--primary-color);">-</span>
+                            </div>
+                            
+                            <button class="btn-secondary" id="attPanelRegBtn" style="width: 100%; border-color: rgba(239,68,68,0.3); color: #ef4444; display: none;" onclick="LeavesModule.triggerRegularizationFromPanel()">
+                                <i class="fa-solid fa-clock-rotate-left"></i> Request Regularization
+                            </button>
+
+                            <div id="inlineRegFormContainer" style="display: none; border-top: 1px solid rgba(16, 185, 129, 0.2); margin-top: 1.5rem; padding-top: 1.5rem;">
+                                <h4 style="margin-bottom: 1rem; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center;">
+                                    <span><i class="fa-solid fa-clock-rotate-left" style="color: #10b981;"></i> Regularization</span>
+                                    <button class="btn-icon" style="width: 24px; height: 24px; font-size: 0.8rem;" onclick="document.getElementById('inlineRegFormContainer').style.display = 'none';"><i class="fa-solid fa-times"></i></button>
+                                </h4>
+                                <form id="regularizationForm">
+                                    <div class="input-group">
+                                        <label>Correction Date</label>
+                                        <input type="text" id="regDate" required readonly style="background: rgba(0,0,0,0.1); cursor: not-allowed;">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Request Type</label>
+                                        <select id="regType" required>
+                                            <option value="">Select Correction Type</option>
+                                            <option value="Missing Time Entry">Missing Time Entry</option>
+                                            <option value="Full Day Correction">Full Day Correction</option>
+                                        </select>
+                                    </div>
+                                    <div id="dynamicPunchesWrapper">
+                                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.5rem;" class="input-group">
+                                            <label style="margin: 0;">Check-In / Check-Out</label>
+                                            <button type="button" class="btn-icon" style="height: 24px; width: 24px; font-size: 0.7rem; color: #10b981; border: 1px solid rgba(16,185,129,0.3);" onclick="if(typeof LeavesModule !== 'undefined') LeavesModule.addRegPunchRow()" title="Add Extra Punch Context"><i class="fa-solid fa-plus"></i></button>
+                                        </div>
+                                        <div id="punchRowsContainer" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
+                                            <div class="punch-row" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.5rem; align-items: center;">
+                                                <input type="time" class="regCheckIn multi-punch" required style="width: 100%;">
+                                                <input type="time" class="regCheckOut multi-punch" style="width: 100%;" placeholder="--:--">
+                                                <button type="button" class="btn-icon" style="width: 32px; height: 32px; opacity: 0; pointer-events: none;"><i class="fa-solid fa-trash"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Reason</label>
+                                        <textarea id="regReason" rows="2" placeholder="Explain the correction..." required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn-primary" style="width: 100%; background: #10b981; border-color: #10b981;">Submit Regularization</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-apply" class="tab-pane" style="display: none;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem;">
+                        <div class="glass-panel" style="padding: 2rem;">
+                            <h3 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-calendar-plus"></i> Apply for Leave</h3>
+                            <form id="personalLeaveForm">
+                                <div class="input-group">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.2rem;">
+                                        <label style="margin: 0;">Leave Type</label>
+                                        <span id="persLeaveBalanceTip" style="font-size: 0.8rem; font-weight: 600; color: var(--primary-color);"></span>
+                                    </div>
+                                    <select id="persLeaveType" required onchange="if(typeof LeavesModule !== 'undefined') LeavesModule.updateBalanceTip()">
+                                        <option value="">Select Type</option>
+                                        <option value="Casual">Casual Leave</option>
+                                        <option value="Sick">Sick Leave</option>
+                                        <option value="Work From Home">Work from home</option>
+                                        <option value="CompOff">Comp Off</option>
+                                        <option value="RH">Restricted Holiday (RH)</option>
+                                    </select>
+                                </div>
+
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                    <div class="input-group">
+                                        <label>Start Date</label>
+                                        <div style="display: flex; gap: 0.5rem;">
+                                            <input type="date" id="persLeaveStart" required style="flex: 2;">
+                                            <select id="startSession" style="flex: 1; min-width: 80px;">
+                                                <option value="S1">S1</option>
+                                                <option value="S2">S2</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>End Date</label>
+                                        <div style="display: flex; gap: 0.5rem;">
+                                            <input type="date" id="persLeaveEnd" required style="flex: 2;">
+                                            <select id="endSession" style="flex: 1; min-width: 80px;">
+                                                <option value="S1">S1</option>
+                                                <option value="S2" selected>S2</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <label>Reason</label>
+                                    <textarea id="persLeaveReason" rows="3" placeholder="Explain your leave request..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn-primary" style="width: 100%;">Submit Request</button>
+                            </form>
+                        </div>
+
+                        <div class="glass-panel" style="padding: 2rem;">
+                            <h3 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-gift"></i> Request Comp Off</h3>
+                            <p style="color: var(--text-dim); margin-bottom: 1.5rem; font-size: 0.9rem;">Submit this if you worked on a holiday or weekend to earn a compensatory day off.</p>
+                            <form id="compOffRequestForm">
+                                <div class="input-group">
+                                    <label>Date Worked</label>
+                                    <input type="date" id="workDate" required>
+                                </div>
+                                <div class="input-group">
+                                    <label>Project / Task</label>
+                                    <input type="text" id="workTask" placeholder="e.g., Server Migration" required>
+                                </div>
+                                <div class="input-group">
+                                    <label>Details</label>
+                                    <textarea id="compOffReason" rows="3" placeholder="Briefly explain the nature of work..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn-secondary" style="width: 100%;">Submit Comp Off Request</button>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Holidays Tab -->
+                <div id="tab-holidays" class="tab-pane" style="display: none;">
+                    <header class="section-header" style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h2>Company Holidays</h2>
+                            <p>Annual holiday schedule and Restricted Holidays (RH)</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn-primary btn-sm" onclick="LeavesModule.openHolidayImportModal()">
+                                <i class="fa-solid fa-file-import"></i> Import Holidays
+                            </button>
+                        </div>
+                    </header>
+                    <div id="holidaysGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; align-items: start;">
+                        <!-- Injected by JS -->
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div id="tab-history" class="tab-pane" style="display: none;">
+                    <div class="glass-panel" style="padding: 1.5rem;">
+                        <header class="section-header" style="border: none; margin-bottom: 1.5rem; padding: 0;">
+                            <div>
+                                <h3 style="margin: 0; display: flex; align-items: center; gap: 0.75rem;"><i class="fa-solid fa-clock-rotate-left"></i> Leave Master History</h3>
+                                <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 0.4rem;">Complete leave request records grouped month-wise</p>
+                            </div>
+                            <div class="filter-pills" id="historyFilters" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+                                <style>
+                                    .pill-btn {
+                                        padding: 0.6rem 1.4rem;
+                                        border-radius: 25px;
+                                        border: 1px solid rgba(255,255,255,0.08);
+                                        background: rgba(255,255,255,0.02);
+                                        color: var(--text-dim);
+                                        font-size: 0.75rem;
+                                        font-weight: 500;
+                                        cursor: pointer;
+                                        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                                    }
+                                    .pill-btn:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); }
+                                    .pill-btn.active {
+                                        background: #6366f1;
+                                        color: white;
+                                        border-color: #6366f1;
+                                        box-shadow: 0 0 20px rgba(99, 102, 241, 0.45);
+                                    }
+                                    #tab-history .glass-panel {
+                                        position: relative;
+                                        overflow: hidden;
+                                        min-height: 480px;
+                                    }
+                                    #tab-history .glass-panel::after {
+                                        content: '';
+                                        position: absolute;
+                                        bottom: -50px;
+                                        left: 50%;
+                                        transform: translateX(-50%);
+                                        width: 100%;
+                                        height: 150px;
+                                        background: radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, transparent 70%);
+                                        pointer-events: none;
+                                        z-index: 0;
+                                    }
+                                </style>
+                                <button class="pill-btn active" onclick="LeavesModule.filterHistory('all', this)">All Requests</button>
+                                <button class="pill-btn" onclick="LeavesModule.filterHistory('pending', this)">Pending</button>
+                                <button class="pill-btn" onclick="LeavesModule.filterHistory('approved', this)">Approved</button>
+                                <button class="pill-btn" onclick="LeavesModule.filterHistory('rejected', this)">Rejected</button>
+                            </div>
+                        </header>
+                        <div id="personalHistoryList" class="custom-scrollbar" style="max-height: 700px; overflow-y: auto;">
+                            <!-- Injected by JS with month grouping -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Table Tab -->
+                <div id="tab-all-balances" class="tab-pane" style="display: none;">
+                    <header class="section-header">
+                        <div>
+                            <h2>Leave Balances</h2>
+                            <p>Manage employee leave quotas</p>
+                        </div>
+                        <div class="header-actions" style="display: flex; gap: 1rem; align-items: center;">
+                            <button class="btn-secondary btn-sm" onclick="LeavesModule.exportToCSV()" title="Export to CSV">
+                                <i class="fa-solid fa-file-export"></i> Export
+                            </button>
+                            <button class="btn-primary btn-sm" onclick="LeavesModule.openImportModal()">
+                                <i class="fa-solid fa-file-import"></i> Import CSV
+                            </button>
+
+                            <div class="search-box glass-panel" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; width: 180px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15);">
+                                <input type="text" id="verifyIdInput" placeholder="Verify CSV ID..." 
+                                    style="background: transparent; border: none; color: var(--text-main); outline: none; width: 100%; font-size: 0.75rem;">
+                                <button onclick="LeavesModule.checkEmployeeId()" class="btn-icon" style="width: 24px; height: 24px; font-size: 0.7rem;" title="Check ID">
+                                    <i class="fa-solid fa-magnifying-glass-chart"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="search-box glass-panel" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 1rem; width: 200px; background: rgba(255,255,255,0.05);">
+                                <i class="fa-solid fa-search" style="color: var(--text-dim); font-size: 0.8rem;"></i>
+                                <input type="text" id="empLeaveSearch" placeholder="Search..." 
+                                    style="background: transparent; border: none; color: var(--text-main); outline: none; width: 100%; font-size: 0.8rem;">
+                            </div>
+                            <a href="dashboard.html" class="btn-secondary btn-sm" style="text-decoration: none; height: 38px; display: flex; align-items: center;">
+                                <i class="fa-solid fa-house"></i>
+                            </a>
+                        </div>
+                    </header>
+
+                    <div class="glass-panel table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Employee Name</th>
+                                    <th>Role</th>
+                                    <th style="color: #10b981;">Casual Earned</th>
+                                    <th style="color: #f59e0b;">Comp Off Earned</th>
+                                    <th style="color: #3b82f6;">Sick Earned</th>
+                                    <th style="color: #ef4444;">Taken</th>
+                                    <th>Total Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="empLeaveMasterBody">
+                                <!-- Data injected by leaves.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
+
+
         </main>
     </div>
+
+
 
     <!-- SUCCESS MODAL -->
     <div id="successModal" class="modal">
@@ -97,19 +492,65 @@
         </div>
     </div>
 
-    <!-- CONFIRM MODAL -->
-    <div id="confirmModal" class="modal">
-        <div class="modal-content glass-panel" style="max-width: 400px; text-align: center; padding: 3rem 2rem;">
-            <div class="confirm-icon"
-                style="width: 80px; height: 80px; background: rgba(239, 68, 68, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: #ef4444; font-size: 2.5rem;">
-                <i class="fa-solid fa-circle-question"></i>
+    <!-- IMPORT MODAL -->
+    <div id="leaveImportModal" class="modal">
+        <div class="glass-panel modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Import Leave Balances</h2>
+                <button class="close-modal" onclick="LeavesModule.closeImportModal()">&times;</button>
             </div>
-            <h2 id="confirmTitle">Confirm Action</h2>
-            <p id="confirmMsg">Are you sure you want to proceed?</p>
-            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-                <button id="confirmCancelBtn" class="btn-secondary" style="flex: 1;">Cancel</button>
-                <button id="confirmOkBtn" class="btn-primary"
-                    style="flex: 1; background: #ef4444; border-color: #ef4444;">Proceed</button>
+            <div style="padding: 1rem 0;">
+                <p style="color: var(--text-dim); margin-bottom: 1.5rem;">Update employee leave balances in bulk via CSV.</p>
+                <div style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; text-align: center; border: 1px dashed var(--glass-border);">
+                    <i class="fa-solid fa-file-csv" style="font-size: 2.5rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                    <p style="margin-bottom: 1rem; font-size: 0.9rem;">Download our template for the correct format</p>
+                    <button class="btn-secondary btn-sm" onclick="LeavesModule.downloadSampleCSV()">
+                        <i class="fa-solid fa-download"></i> Download Template
+                    </button>
+                </div>
+                <div class="input-group">
+                    <label>Select CSV File</label>
+                    <input type="file" id="leaveImportInput" accept=".csv" style="width: 100%; border: 1px solid var(--glass-border); padding: 0.5rem; border-radius: 8px;">
+                </div>
+            </div>
+            <div class="modal-actions" style="margin-top: 1rem;">
+                <button class="btn-secondary" onclick="LeavesModule.closeImportModal()" style="flex: 1;">Cancel</button>
+                <button class="btn-primary" onclick="LeavesModule.handleImport(document.getElementById('leaveImportInput'))" style="flex: 1;">
+                    <i class="fa-solid fa-file-import"></i> Confirm Import
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HOLIDAY IMPORT MODAL -->
+    <div id="holidayImportModal" class="modal">
+        <div class="glass-panel modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Import Holiday List</h2>
+                <button class="close-modal" onclick="LeavesModule.closeHolidayImportModal()">&times;</button>
+            </div>
+            <div style="padding: 1rem 0;">
+                <p style="color: var(--text-dim); margin-bottom: 1.5rem;">Upload your annual holiday calendar and RH list.</p>
+                <div style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; text-align: center; border: 1px dashed var(--glass-border);">
+                    <i class="fa-solid fa-umbrella-beach" style="font-size: 2.5rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                    <p style="margin-bottom: 1rem; font-size: 0.9rem;">Download the holiday schedule template</p>
+                    <button class="btn-secondary btn-sm" onclick="LeavesModule.downloadHolidayTemplate()">
+                        <i class="fa-solid fa-download"></i> Download Template
+                    </button>
+                </div>
+                <div class="input-group">
+                    <label>Select Holiday CSV</label>
+                    <input type="file" id="holidayImportInput" accept=".csv" style="width: 100%; border: 1px solid var(--glass-border); padding: 0.5rem; border-radius: 8px;">
+                </div>
+                <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.5rem; line-height: 1.4;">
+                    <i class="fa-solid fa-circle-info"></i> Format: Date (YYYY-MM-DD), Name, Type (Mandatory/RH)
+                </p>
+            </div>
+            <div class="modal-actions" style="margin-top: 1rem;">
+                <button class="btn-secondary" onclick="LeavesModule.closeHolidayImportModal()" style="flex: 1;">Cancel</button>
+                <button class="btn-primary" onclick="LeavesModule.handleHolidayImport()" style="flex: 1;">
+                    <i class="fa-solid fa-file-import"></i> Confirm Import
+                </button>
             </div>
         </div>
     </div>
@@ -117,8 +558,8 @@
     <script src="js/data.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/render-logic.js"></script>
-    <script src="script.js"></script>
-    <script src="leaves.js"></script>
+    <script src="script.js?v=2"></script>
+    <script src="leaves.js?v=2"></script>
     <script src="js/mobile-nav.js"></script>
 </body>
 

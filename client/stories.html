@@ -4,15 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teams - Gravity HR</title>
+    <title>Stories - Gravity HR</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/stories.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
-<body data-page="teams">
+<body data-page="stories">
     <div class="background-blobs">
         <div class="blob blob-1"></div>
         <div class="blob blob-2"></div>
@@ -27,7 +28,7 @@
                 <span>Gravity HR</span>
             </div>
             <nav class="nav-links">
-                <!-- Links injected by render-logic.js -->
+                <!-- Dynamically rendered by JS -->
             </nav>
             <div style="margin-top: auto; padding: 1rem 1.5rem;">
                 <button id="themeToggle" class="btn-secondary btn-sm"
@@ -54,24 +55,64 @@
 
         <!-- MAIN CONTENT AREA -->
         <main class="main-content">
-            <header class="section-header">
+            <header class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <h1>Teams</h1>
-                    <p>Manage and view team structures</p>
+                    <h1>Company Stories</h1>
+                    <p>Celebrating our milestones and achievements</p>
+                </div>
+                <div id="adminActions" style="display: none; gap: 0.75rem;">
+                    <button id="importWishesBtn" class="btn-secondary btn-sm">
+                        <i class="fa-solid fa-file-import"></i> Import Wishes
+                    </button>
+                    <button id="exportStoriesBtn" class="btn-secondary btn-sm">
+                        <i class="fa-solid fa-file-export"></i> Export Stories
+                    </button>
                 </div>
             </header>
 
-            <!-- Teams Content Container -->
-            <div id="teamsContainer">
-                <!-- Content injected by js/render-logic.js -->
+            <!-- STORIES FEED -->
+            <div id="storiesFeed" class="stories-feed-grid">
+                <!-- Injected by JS -->
+                <div class="loading-state">
+                    <i class="fa-solid fa-circle-notch fa-spin"></i>
+                    <p>Gathering celebrations...</p>
+                </div>
             </div>
         </main>
     </div>
 
-    <!-- Scripts -->
+    <!-- IMPORT MODAL -->
+    <div id="importModal" class="modal-overlay" style="display: none;">
+        <div class="glass-panel modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Import Wish Notes</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div style="padding: 1.5rem;">
+                <p style="color: var(--text-dim); margin-bottom: 1.5rem;">Upload a CSV or TXT file with one wish per line.</p>
+                <div class="input-group">
+                    <label>Select File</label>
+                    <input type="file" id="wishFileInput" accept=".csv,.txt" style="width: 100%;">
+                </div>
+                <div style="margin-top: 1rem;">
+                    <label>Wish Type</label>
+                    <select id="wishTypeSelect" style="width: 100%;">
+                        <option value="birthday">Birthday Wishes</option>
+                        <option value="anniversary">Joining Anniversary Wishes</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary close-modal-btn">Cancel</button>
+                <button id="confirmImportBtn" class="btn-primary">Import</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/data.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/render-logic.js"></script>
+    <script src="js/stories.js"></script>
     <script src="script.js?v=2"></script>
     <script src="js/mobile-nav.js"></script>
 </body>

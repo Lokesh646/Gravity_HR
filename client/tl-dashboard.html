@@ -78,14 +78,31 @@
                     <div style="display: flex; align-items: center; gap: 1.5rem;">
                         <div>
                             <h3 class="ios-section-title" style="margin: 0; font-size: 1.4rem; font-weight: 700;">
-                                Traffic Intelligence
+                                Work Hours Overview
                             </h3>
                         </div>
                     </div>
+
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <label for="dashTrafficMonthFilter" style="font-size: 0.85rem; color: var(--text-dim);">Select
+                            Month:</label>
+                        <input type="month" id="dashTrafficMonthFilter" class="glass-input"
+                            style="padding: 0.4rem; width: 150px;">
+                        <button class="btn-primary btn-sm" onclick="handleDashWorkHoursFilter()">Update</button>
+                    </div>
                 </div>
 
-                <div style="height: 400px; width: 100%; position: relative;">
-                    <canvas id="trafficChart"></canvas>
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                    <div style="height: 350px; width: 100%; position: relative;">
+                        <canvas id="trafficChart"></canvas>
+                        <p style="text-align: center; font-size: 0.8rem; color: var(--text-dim); margin-top: 5px;">Daily
+                            Work Hours (Hours)</p>
+                    </div>
+                    <div style="height: 350px; width: 100%; position: relative;">
+                        <canvas id="userContribChart"></canvas>
+                        <p style="text-align: center; font-size: 0.8rem; color: var(--text-dim); margin-top: 5px;">
+                            Project Distribution (Hours)</p>
+                    </div>
                 </div>
             </div>
         </main>
@@ -242,7 +259,7 @@
     <script src="js/auth.js"></script>
     <script src="js/render-logic.js"></script>
     <script src="traffic-counter.js"></script>
-    <script src="script.js"></script>
+    <script src="script.js?v=2"></script>
     <script src="js/dashboard-core.js"></script>
     <script src="js/tl-dash.js"></script>
     <script src="js/mobile-nav.js"></script>

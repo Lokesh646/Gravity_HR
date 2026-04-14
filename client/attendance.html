@@ -64,6 +64,9 @@
                     <a href="dashboard.html" class="btn-secondary btn-sm" style="text-decoration: none;">
                         <i class="fa-solid fa-house"></i> Back to Dashboard
                     </a>
+                    <button class="btn-primary btn-sm" id="openUploadBiometricBtn" style="display: none;">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Upload Biometric CSV
+                    </button>
                     <div class="search-container" style="position: relative; width: 300px;">
                         <i class="fa-solid fa-magnifying-glass"
                             style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none;"></i>
@@ -95,10 +98,9 @@
                     </div>
                     <div class="calendar-legend">
                         <div class="legend-item"><span class="dot pink"></span> Sunday</div>
-                        <div class="legend-item"><span class="dot orange"></span>
-                            < 8 Hours</div>
-                                <div class="legend-item"><span class="dot green"></span> >= 8 Hours</div>
-                        </div>
+                        <div class="legend-item"><span class="dot orange"></span> < 8.5 Hours</div>
+                        <div class="legend-item"><span class="dot green"></span> >= 8.5 Hours</div>
+                    </div>
                     </div>
 
                     <!-- RIGHT SIDE: DETAILS -->
@@ -123,6 +125,50 @@
                     </div>
                 </div>
         </main>
+    </div>
+
+    <!-- BIOMETRIC UPLOAD MODAL -->
+    <div id="biometricUploadModal" class="modal">
+        <div class="glass-panel modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Upload Biometric Data</h2>
+                <button class="close-modal" id="closeUploadModalBtn">&times;</button>
+            </div>
+            <form id="biometricUploadForm" style="padding: 1.5rem 2rem;">
+                <p style="color: var(--text-dim); margin-bottom: 1rem; font-size: 0.9rem;">Upload daily biometric log (CSV format). The system will automatically map the check-ins/outs.</p>
+
+                <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; text-align: center; border: 1px dashed var(--glass-border);">
+                    <p style="margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-main);">Need the correct format?</p>
+                    <button type="button" class="btn-secondary btn-sm" id="downloadBioTemplateBtn">
+                        <i class="fa-solid fa-download"></i> Download CSV Template
+                    </button>
+                </div>
+                
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-dim); font-size: 0.85rem;">Date of Attendance</label>
+                    <input type="date" id="bioUploadDate" required style="width: 100%;">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-dim); font-size: 0.85rem;">Branch Name</label>
+                    <input type="text" id="bioBranchName" placeholder="e.g., Dharmapuri" required style="width: 100%;">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-dim); font-size: 0.85rem;">CSV File</label>
+                    <div class="upload-item">
+                        <input type="file" id="bioCsvFile" accept=".csv" required>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancelUploadModalBtn" style="flex: 1;">Cancel</button>
+                    <button type="submit" class="btn-primary" id="submitUploadModalBtn" style="flex: 1;">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Upload
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- SUCCESS MODAL -->
@@ -158,7 +204,7 @@
     <script src="js/data.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/render-logic.js"></script>
-    <script src="script.js"></script>
+    <script src="script.js?v=2"></script>
     <script src="attendance.js"></script>
     <script src="js/mobile-nav.js"></script>
 </body>

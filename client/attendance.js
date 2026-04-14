@@ -32,6 +32,222 @@ const AttendanceModule = {
         document.getElementById('exportDayBtn')?.addEventListener('click', () => {
             this.exportDayLogs();
         });
+
+        // Setup biometric upload listeners
+        const user = typeof Auth !== 'undefined' ? Auth.getCurrentUser() : null;
+        if (user && ['Admin', 'HR'].includes(user.role)) {
+            const btn = document.getElementById('openUploadBiometricBtn');
+            if (btn) btn.style.display = 'flex';
+        }
+
+        document.getElementById('openUploadBiometricBtn')?.addEventListener('click', () => {
+            const modal = document.getElementById('biometricUploadModal');
+            if (modal) modal.classList.add('active');
+        });
+
+        document.getElementById('downloadBioTemplateBtn')?.addEventListener('click', () => {
+            this.downloadBiometricTemplate();
+        });
+
+        ['closeUploadModalBtn', 'cancelUploadModalBtn'].forEach(id => {
+            document.getElementById(id)?.addEventListener('click', () => {
+                document.getElementById('biometricUploadModal').classList.remove('active');
+            });
+        });
+
+        document.getElementById('biometricUploadForm')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleBiometricUpload();
+        });
+    },
+
+    async handleBiometricUpload(overwrite = false) {
+        const dateInput = document.getElementById('bioUploadDate').value;
+        const branchInput = document.getElementById('bioBranchName').value;
+        const fileInput = document.getElementById('bioCsvFile');
+        const file = fileInput.files[0];
+
+        if (!dateInput || !branchInput || !file) return;
+
+        // format date as DD-MM-YYYY
+        const d = new Date(dateInput);
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        const formattedDate = `${dd}-${mm}-${yyyy}`;
+
+        const fileName = `${formattedDate}_${branchInput}.csv`;
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('fileName', fileName);
+        if (overwrite) formData.append('overwrite', 'true');
+
+        try {
+            let serverSuccess = true;
+            try {
+                const res = await fetch('http://localhost:5000/api/upload-biometric', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (res.status === 409) {
+                    // Duplicate 
+                    this.showConfirmDialog(data.error, () => {
+                        this.handleBiometricUpload(true); // retry with overwrite
+                    });
+                    return;
+                }
+
+                if (!res.ok) throw new Error(data.error || 'Upload failed');
+            } catch (fetchErr) {
+                console.warn("Backend not reachable. Processing locally.", fetchErr);
+                serverSuccess = false;
+            }
+
+            // Now parse CSV
+            await this.parseBiometricCSV(file, dateInput);
+            
+            document.getElementById('biometricUploadModal').classList.remove('active');
+            document.getElementById('biometricUploadForm').reset();
+            
+            if (typeof showSuccess === 'function') {
+                showSuccess("Biometric data uploaded & processed successfully!");
+            } else {
+                alert("Success: Biometric data updated.");
+            }
+
+            this.selectedDate = dateInput;
+            this.currentDate = new Date(dateInput);
+            this.renderCalendar();
+            this.renderDetails(dateInput);
+
+        } catch (err) {
+            console.error(err);
+            alert("Error: " + err.message);
+        }
+    },
+
+    showConfirmDialog(msg, onConfirm) {
+        document.getElementById('confirmMsg').textContent = msg;
+        const modal = document.getElementById('confirmModal');
+        modal.classList.add('active');
+        
+        const okBtn = document.getElementById('confirmOkBtn');
+        const cancelBtn = document.getElementById('confirmCancelBtn');
+
+        // clean up previous listeners
+        const newOk = okBtn.cloneNode(true);
+        const newCancel = cancelBtn.cloneNode(true);
+        okBtn.parentNode.replaceChild(newOk, okBtn);
+        cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+
+        newOk.addEventListener('click', () => {
+            modal.classList.remove('active');
+            onConfirm();
+        });
+
+        newCancel.addEventListener('click', () => {
+            modal.classList.remove('active');
+        });
+    },
+
+    async parseBiometricCSV(file, baseDateStr) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                const lines = text.split('\n').filter(l => l.trim().length > 0);
+                if (lines.length <= 1) return resolve();
+
+                const reportsObj = {};
+                for (let i = 1; i < lines.length; i++) {
+                    const row = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+                    const empId = row[0];
+                    
+                    if (!empId) continue;
+
+                    if (!reportsObj[empId]) {
+                        let empName = "Unknown";
+                        if (typeof STATE !== 'undefined' && STATE.employees) {
+                            const found = STATE.employees.find(emp => emp.id === empId);
+                            if (found) empName = found.name;
+                        }
+                        reportsObj[empId] = {
+                            id: empId,
+                            name: empName,
+                            times: []
+                        };
+                    }
+
+                    for (let c = 1; c < row.length; c++) {
+                        let timestampStr = row[c];
+                        if (!timestampStr || timestampStr === '-') continue;
+                        
+                        // ensure 2-digit padding for 9:01:00 -> 09:01:00 to prevent Date parsing errors
+                        if (/^\d:\d{2}:\d{2}$/.test(timestampStr)) {
+                            timestampStr = '0' + timestampStr;
+                        }
+
+                        let dInfo = new Date(timestampStr);
+                        if (isNaN(dInfo.getTime())) {
+                            dInfo = new Date(`${baseDateStr}T${timestampStr}`);
+                        }
+                        if (!isNaN(dInfo.getTime())) {
+                            reportsObj[empId].times.push(dInfo.getTime());
+                        }
+                    }
+                }
+
+                let reports = JSON.parse(localStorage.getItem("loginReports") || "[]");
+                
+                // Optional: remove existing reports for that date and these employees to avoid duplication on overwrite
+                reports = reports.filter(r => {
+                    const rDate = this.getLocalISO(r.login);
+                    if (rDate !== baseDateStr) return true;
+                    // if it is same day, check if employee is in the CSV we just parsed
+                    if (reportsObj[r.id]) return false; 
+                    return true;
+                });
+
+                Object.values(reportsObj).forEach(emp => {
+                    emp.times.sort();
+                    if (emp.times.length > 0) {
+                        const login = new Date(emp.times[0]).toISOString();
+                        const logout = emp.times.length > 1 ? new Date(emp.times[emp.times.length - 1]).toISOString() : null;
+                        
+                        reports.push({
+                            id: emp.id,
+                            name: emp.name,
+                            login,
+                            logout
+                        });
+                    }
+                });
+
+                localStorage.setItem("loginReports", JSON.stringify(reports));
+                resolve();
+            };
+            reader.onerror = reject;
+            reader.readAsText(file);
+        });
+    },
+
+    downloadBiometricTemplate() {
+        const headers = "Employee ID, First IN, First Out, Second In, Second Out\n";
+        const sampleData = "EMP001,09:00:00,13:00:00,14:00:00,18:00:00\nEMP002,08:30:00,12:30:00,13:00:00,17:00:00\n";
+        const csvContent = headers + sampleData;
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "Biometric_Template.csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     },
 
     renderCalendar() {
@@ -89,7 +305,7 @@ const AttendanceModule = {
                     });
 
                     const totalHours = totalMs / (1000 * 60 * 60);
-                    if (totalHours >= 8) {
+                    if (totalHours >= 8.5) {
                         dayDiv.classList.add('day-complete');
                     } else if (totalHours > 0) {
                         dayDiv.classList.add('day-short');

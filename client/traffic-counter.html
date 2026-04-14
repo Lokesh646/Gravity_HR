@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/dashboard-common.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
@@ -170,6 +171,12 @@
                         <i class="fa-solid fa-floppy-disk"></i> Save
                     </button>
                 </div>
+
+                <!-- DASHBOARD STATS INTEGRATION -->
+                <div id="statsGrid" class="stats-grid"
+                    style="margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 30px;">
+                    <!-- Injected by script.js -->
+                </div>
             </div>
         </main>
     </div>
@@ -214,7 +221,7 @@
     <script src="js/data.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/render-logic.js"></script>
-    <script src="script.js"></script>
+    <script src="script.js?v=2"></script>
     <script src="traffic-counter.js"></script>
 </body>
 

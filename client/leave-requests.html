@@ -55,16 +55,72 @@
         <!-- MAIN CONTENT AREA -->
         <main class="main-content">
             <header class="section-header">
-                <div>
-                    <h2>Leave Requests</h2>
-                    <p>Review and approve employee leaves</p>
+                <div style="margin-bottom: 1.5rem;">
+                    <h2>Leave Management</h2>
+                    <p>Review employee applications and track history</p>
                 </div>
-                <a href="dashboard.html" class="btn-secondary btn-sm" style="text-decoration: none;">
-                    <i class="fa-solid fa-house"></i> Back to Dashboard
-                </a>
+
+                <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 2rem;">
+                    <a href="dashboard.html" class="btn-secondary btn-sm" style="text-decoration: none;">
+                        <i class="fa-solid fa-house"></i> Back to Dashboard
+                    </a>
+
+                    <div class="search-container" style="position: relative; flex: 1; min-width: 250px;">
+                        <i class="fa-solid fa-magnifying-glass"
+                            style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none;"></i>
+                        <input type="text" id="empLeaveSearch" placeholder="Search requests..."
+                            style="width: 100%; padding: 0.6rem 1rem 0.6rem 2.8rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-main); font-size: 0.9rem; outline: none; transition: all 0.3s ease;">
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                        <button class="btn-secondary btn-sm" onclick="LeavesModule.exportLeavesData()"><i class="fa-solid fa-file-export"></i> Export</button>
+                    </div>
+                </div>
             </header>
 
-            <div class="glass-panel table-container">
+            <div class="glass-panel" style="padding: 1rem; margin-bottom: 2rem;">
+                <div class="tab-nav-simple" style="display: flex; gap: 1rem;">
+                    <style>
+                        .tab-nav-simple .tab-btn-nav {
+                            padding: 0.75rem 1.5rem;
+                            border-radius: 8px;
+                            border: 1px solid transparent;
+                            background: transparent;
+                            color: var(--text-dim);
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                            display: flex;
+                            align-items: center;
+                            gap: 0.5rem;
+                            font-weight: 500;
+                            font-family: inherit;
+                        }
+                        .tab-nav-simple .tab-btn-nav.active {
+                            background: var(--primary-gradient, linear-gradient(135deg, var(--primary-color), var(--secondary-color)));
+                            color: white;
+                            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+                        }
+                        .tab-nav-simple .tab-btn-nav:hover:not(.active) {
+                            background: rgba(255,255,255,0.05);
+                            border-color: var(--glass-border);
+                        }
+                    </style>
+                    <button class="tab-btn-nav active" data-leave-tab="pending">
+                        <i class="fa-solid fa-hourglass-half"></i> Pending Requests
+                    </button>
+                    <button class="tab-btn-nav" data-leave-tab="history">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Request History
+                    </button>
+                </div>
+            </div>
+
+            <!-- Pending Table Wrapper -->
+            <div id="pendingRequestsSection" class="glass-panel table-container">
+                <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="width: 10px; height: 10px; border-radius: 50%; background: #3b82f6;"></div>
+                    <h3 style="margin: 0; font-size: 1rem;">Pending Applications</h3>
+                    <span id="pendingLeaveCount" style="margin-left: auto; font-size: 0.8rem; color: var(--text-dim);"></span>
+                </div>
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -81,6 +137,65 @@
                     </tbody>
                 </table>
             </div>
+
+        <div id="historyRequestsSection" class="glass-panel" style="display: none; padding: 1.5rem;">
+            <style>
+                .pill-btn {
+                    padding: 0.5rem 1rem;
+                    border-radius: 20px;
+                    border: 1px solid var(--glass-border);
+                    background: rgba(255,255,255,0.03);
+                    color: var(--text-dim);
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                }
+                .pill-btn:hover { background: rgba(255,255,255,0.08); }
+                .pill-btn.active {
+                    background: var(--primary-color);
+                    color: white;
+                    border-color: var(--primary-color);
+                    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+                }
+                .month-section { margin-bottom: 2rem; }
+            </style>
+            <header class="section-header" style="border: none; margin-bottom: 1.5rem; padding: 0;">
+                <div>
+                    <h3 style="margin: 0; display: flex; align-items: center; gap: 0.75rem;"><i class="fa-solid fa-clock-rotate-left"></i> Leave History Archive</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 0.4rem;">Complete leave logs grouped month-wise</p>
+                </div>
+                <div class="filter-pills" id="historyFilters" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+                    <style>
+                        .pill-btn {
+                            padding: 0.6rem 1.4rem;
+                            border-radius: 25px;
+                            border: 1px solid rgba(255,255,255,0.08);
+                            background: rgba(255,255,255,0.02);
+                            color: var(--text-dim);
+                            font-size: 0.75rem;
+                            font-weight: 500;
+                            cursor: pointer;
+                            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                        }
+                        .pill-btn:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); }
+                        .pill-btn.active {
+                            background: #6366f1;
+                            color: white;
+                            border-color: #6366f1;
+                            box-shadow: 0 0 20px rgba(99, 102, 241, 0.45);
+                        }
+                    </style>
+                    <button class="pill-btn active" onclick="LeavesModule.filterHistory('all', this)">All Requests</button>
+                    <button class="pill-btn" onclick="LeavesModule.filterHistory('pending', this)">Pending</button>
+                    <button class="pill-btn" onclick="LeavesModule.filterHistory('approved', this)">Approved</button>
+                    <button class="pill-btn" onclick="LeavesModule.filterHistory('rejected', this)">Rejected</button>
+                </div>
+            </header>
+            <div id="personalHistoryList" class="custom-scrollbar" style="max-height: 700px; overflow-y: auto;">
+                <!-- Injected by LeavesModule.renderHistory -->
+            </div>
+        </div>
         </main>
     </div>
 
@@ -117,7 +232,7 @@
     <script src="js/data.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/render-logic.js"></script>
-    <script src="script.js"></script>
+    <script src="script.js?v=2"></script>
     <script src="leaves.js"></script>
     <script src="js/mobile-nav.js"></script>
 </body>

@@ -1,0 +1,9 @@
+<script>
+localStorage.setItem('gravityHrCurrentUser', JSON.stringify({ id: 101, name: 'Mani', role: 'Employee' }));
+localStorage.setItem('gravityHrProjects', JSON.stringify([
+    {id: 1, number: 'P1', name: 'Proj 1', status: 'Active', clientId: 1, sites: ['Site 1']}
+]));
+localStorage.setItem('gravityHrClients', JSON.stringify([{id: 1, name: 'Client 1'}]));
+localStorage.setItem('gravityHrTags', JSON.stringify([{name: 'Tag 1'}]));
+window.location.href = 'timer.html';
+</script>

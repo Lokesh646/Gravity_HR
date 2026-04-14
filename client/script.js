@@ -6,8 +6,11 @@ const STATE = {
     searchQuery: '',
     theme: 'dark',
     sortBy: 'name',
-    sortOrder: 'asc'
+    sortOrder: 'asc',
+    notifications: []
 };
+// Explicit exposure
+window.STATE = STATE;
 
 // --- PERSISTENCE HELPERS ---
 const saveData = () => {
@@ -31,6 +34,18 @@ const loadData = () => {
     const isAdminRole = ['Admin', 'Manager', 'HR'].includes(role);
     const isEmployeeRole = role === 'Employee' || role === 'Team Leader';
 
+    // Prevent direct URL access to traffic counter for restricted roles
+    if (page === 'traffic-counter' && ['Admin', 'HR', 'IT Team'].includes(role)) {
+        window.location.href = 'dashboard.html';
+        return;
+    }
+
+    // Prevent direct URL access to tasks for restricted roles
+    if (['tasks'].includes(page) && isEmployeeRole) {
+        window.location.href = 'dashboard.html';
+        return;
+    }
+
     /* 
     // Strict Role Redirect - Temporarily disabled for debugging/smoother navigation
     if (isEmployeeRole) {
@@ -51,8 +66,16 @@ const loadData = () => {
         const parsed = JSON.parse(data);
         STATE.employees = parsed.employees || [];
         STATE.currentTab = parsed.currentTab || 'active';
+        
+        // Ensure employees page always defaults to active tab on load
+        if (page === 'employees') {
+            STATE.currentTab = 'active';
+        }
+        
         STATE.packages = parsed.packages || [];
         STATE.payrollHistory = parsed.payrollHistory || {};
+        STATE.sortBy = parsed.sortBy || 'name';
+        STATE.sortOrder = parsed.sortOrder || 'asc';
         if (parsed.theme) {
             STATE.theme = parsed.theme;
             applyTheme();
@@ -78,6 +101,80 @@ const loadData = () => {
     renderAll();
 };
 
+// --- LEAVE UTILITIES ---
+const getEmployeeBalances = (emp) => {
+    if (!emp) return { earnedPaid: 0, earnedSick: 0, compOff: 0, taken: 0, totalRemaining: 0 };
+    
+    // --- MASTER LOOKUP (Crucial for sync) ---
+    // Ensure we are using integer-based fuzzy matching for robust ID discovery
+    const masterEmp = (STATE.employees || []).find(e => {
+        const sysId = String(e.id).trim().toUpperCase();
+        const inputId = String(emp.id).trim().toUpperCase();
+        if (sysId === inputId) return true;
+        
+        const cleanE = parseInt(sysId.replace(/\D/g, ''), 10);
+        const cleanI = parseInt(inputId.replace(/\D/g, ''), 10);
+        return !isNaN(cleanE) && !isNaN(cleanI) && cleanE === cleanI;
+    }) || emp;
+    
+    // Tenure Calculation (Fallback)
+    const doj = new Date(masterEmp.doj || new Date());
+    const now = new Date();
+    const diffYears = now.getFullYear() - doj.getFullYear();
+    const diffMonths = (diffYears * 12) + (now.getMonth() - doj.getMonth());
+    const tenureMonths = Math.max(0, diffMonths);
+
+    // Casual (Manual or Calculated)
+    let earnedPaid = (masterEmp.casualEarned !== undefined && masterEmp.casualEarned !== null) 
+        ? parseFloat(masterEmp.casualEarned) 
+        : tenureMonths * 1.25;
+
+    // Sick (Manual or Calculated)
+    let earnedSick = (masterEmp.sickEarned !== undefined && masterEmp.sickEarned !== null) 
+        ? parseFloat(masterEmp.sickEarned) 
+        : Math.floor(tenureMonths / 3);
+
+    // Comp Off (Manual tracking)
+    const compOff = masterEmp.compOff || 0;
+
+    // Taken (Approved only)
+    const stateData = JSON.parse(localStorage.getItem('gravity_hrm_state') || '{}');
+    const takenByType = (stateData.leaves || [])
+        .filter(l => l.empId === masterEmp.id && l.status === 'Granted')
+        .reduce((acc, l) => {
+            acc[l.type] = (acc[l.type] || 0) + (l.days || 0);
+            return acc;
+        }, {});
+
+    const taken = Object.values(takenByType).reduce((sum, val) => sum + val, 0);
+
+    // Calculate remaining per core types
+    const remainingCasual = earnedPaid - (takenByType['Casual'] || 0);
+    const remainingSick = earnedSick - (takenByType['Sick'] || 0);
+    const remainingCompOff = compOff - (takenByType['CompOff'] || 0);
+
+    const totalRemaining = (earnedPaid + earnedSick + compOff) - taken;
+
+    // Restricted Holiday (RH) Tracking
+    const rhTaken = takenByType['RH'] || 0;
+    const remainingRH = Math.max(0, 2 - rhTaken);
+
+    return {
+        tenureMonths,
+        earnedPaid,
+        earnedSick,
+        compOff,
+        taken,
+        takenByType,
+        remainingCasual,
+        remainingSick,
+        remainingCompOff,
+        remainingRH,
+        totalRemaining
+    };
+};
+window.getEmployeeBalances = getEmployeeBalances;
+
 // --- ROLE-BASED ACCESS UTILITIES ---
 const Hierarchy = {
     getAccessibleIds: (user) => {
@@ -89,14 +186,17 @@ const Hierarchy = {
         let ids = [user.id]; // Always include self
 
         if (user.role === 'Manager') {
-            // My Team Leaders
-            const tls = STATE.employees.filter(e => e.reportsTo === user.id);
-            const tlIds = tls.map(tl => tl.id);
-            ids = ids.concat(tlIds);
+            // 1. My Direct Reports (TLs or Employees)
+            const directReports = STATE.employees.filter(e => e.reportsTo === user.id);
+            const directIds = directReports.map(e => e.id);
+            ids = ids.concat(directIds);
 
-            // Employees reporting to my Team Leaders
-            const emps = STATE.employees.filter(e => tlIds.includes(e.reportsTo));
-            ids = ids.concat(emps.map(e => e.id));
+            // 2. My Team Leaders (subset of direct reports)
+            const tlIds = directReports.filter(e => e.role === 'Team Leader').map(tl => tl.id);
+
+            // 3. Employees reporting to my Team Leaders
+            const indirectEmps = STATE.employees.filter(e => tlIds.includes(e.reportsTo));
+            ids = ids.concat(indirectEmps.map(e => e.id));
         } else if (user.role === 'Team Leader') {
             // Employees reporting to me
             const emps = STATE.employees.filter(e => e.reportsTo === user.id);
@@ -338,6 +438,7 @@ window.handleHeaderSort = (field) => {
         STATE.sortBy = field;
         STATE.sortOrder = 'asc';
     }
+    saveData();
     renderEmployees();
 };
 
@@ -513,105 +614,88 @@ const renderNavigation = () => {
 
 const updateStats = () => {
     const page = document.body.dataset.page;
-    if (page !== 'dashboard') return;
+    if (page !== 'dashboard' && page !== 'traffic-counter') return;
 
     // Show containers if they are hidden (e.g. initial load for Admin)
-    const statsGrid = document.getElementById('statsGrid');
-    const chartContainer = document.getElementById('chartContainer');
+    const currentSection = (page === 'dashboard') ? (localStorage.getItem('activeDashboardSection') || 'dashboard') : 'traffic';
     const role = localStorage.getItem('currentRole');
     const isAdmin = ['Admin', 'Manager', 'HR'].includes(role);
+    const statsGrid = document.getElementById('statsGrid');
+    const chartContainer = document.getElementById('chartContainer');
 
     if (isAdmin) {
-        if (statsGrid) statsGrid.style.display = 'grid';
-        if (chartContainer) chartContainer.style.display = 'block';
+        if (statsGrid) statsGrid.style.display = (page === 'dashboard' && currentSection !== 'traffic') ? 'grid' : 'none';
+        if (chartContainer) chartContainer.style.display = (page === 'dashboard' && currentSection !== 'traffic') ? 'block' : 'none';
+    } else if (role === 'Employee' || role === 'Team Leader') {
+        // For Employees and TLs, hide secondary stats if on traffic section
+        if (statsGrid) statsGrid.style.display = (page === 'dashboard' && currentSection === 'dashboard') ? 'grid' : 'none';
+        if (chartContainer) chartContainer.style.display = (page === 'dashboard' && currentSection === 'dashboard') ? 'block' : 'none';
     }
 
-    renderTrafficStats();
+    renderWorkHoursStats();
 
-    // Also trigger the new monthly intelligence if filter is present
+    // Also trigger the new monthly work hours if filter is present
     const dashMonthFilter = document.getElementById('dashTrafficMonthFilter');
-    if (dashMonthFilter && dashMonthFilter.value) {
-        if (typeof renderDashTrafficIntelligence === 'function') {
-            renderDashTrafficIntelligence(dashMonthFilter.value);
+    if (dashMonthFilter) {
+        if (!dashMonthFilter.value) {
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            dashMonthFilter.value = currentMonth;
+        }
+        if (typeof renderDashWorkHours === 'function') {
+            renderDashWorkHours(dashMonthFilter.value);
         }
     }
 };
 
 // --- DASHBOARD STATS & CHARTS ---
 let trafficChartInstance = null;
-const renderTrafficStats = () => {
-    if (!(document.body.dataset.page || '').includes('dashboard')) return;
+const renderWorkHoursStats = () => {
+    const page = document.body.dataset.page || '';
+    if (!page.includes('dashboard') && page !== 'traffic-counter') return;
 
-    // 1. Traffic Growth Logic
-    const history = JSON.parse(localStorage.getItem('alienTrafficHistory') || '{}');
+    // 1. Get logs from Timer
+    const logs = JSON.parse(localStorage.getItem('gravityHrTimerLogs') || localStorage.getItem('gravityHrLogs') || '[]');
     const todayStr = new Date().toISOString().split('T')[0];
 
-    const getHistoryTotal = (entry) => {
-        if (typeof entry === 'number') return entry;
-        if (entry && typeof entry === 'object') return entry.total || 0;
-        return 0;
-    };
+    // Filter logs for Today
+    const todayLogs = logs.filter(l => l.date === todayStr);
+    const totalMsToday = todayLogs.reduce((acc, log) => acc + (log.durationMs || 0), 0);
 
-    let todayTotal = getHistoryTotal(history[todayStr]);
-
-    // Check for live session counts to make it "lively"
-    const liveSessionData = localStorage.getItem("alienTrafficCounts");
-    if (liveSessionData) {
-        const liveRows = JSON.parse(liveSessionData);
-        let liveTotal = 0;
-        liveRows.forEach(row => {
-            Object.keys(row).forEach(key => {
-                if (['car', 'lgv', 'ogv1', 'ogv2', 'bus', 'mc', 'pc', 'peds'].includes(key)) {
-                    liveTotal += parseInt(row[key] || 0);
-                }
-            });
-        });
-        // Use the higher value or just liveTotal if it's the current session
-        if (liveTotal > todayTotal) todayTotal = liveTotal;
+    const hoursTodayEl = document.getElementById('statTotalHours');
+    if (hoursTodayEl) {
+        const hours = Math.floor(totalMsToday / (1000 * 60 * 60));
+        const mins = Math.floor((totalMsToday % (1000 * 60 * 60)) / (1000 * 60));
+        hoursTodayEl.innerText = `${hours}h ${mins}m`;
     }
 
-    const trafficTotalEl = document.getElementById('statTotalTraffic');
-    if (trafficTotalEl) trafficTotalEl.innerText = todayTotal;
+    // 2. Growth/Trend - Comparing today vs yesterday
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterStr = yesterday.toISOString().split('T')[0];
 
-    // Find Yesterday
-    const dates = Object.keys(history).sort();
-    let prevTotal = 0;
-    const todayIndex = dates.indexOf(todayStr);
+    const yesterLogs = logs.filter(l => l.date === yesterStr);
+    const totalMsYester = yesterLogs.reduce((acc, log) => acc + (log.durationMs || 0), 0);
 
-    if (todayIndex > 0) {
-        prevTotal = getHistoryTotal(history[dates[todayIndex - 1]]);
-    } else if (dates.length > 1 && todayIndex === -1) {
-        prevTotal = getHistoryTotal(history[dates[dates.length - 1]]);
-    } else if (dates.length === 1 && todayIndex === 0) {
-        // Fake yesterday for 1 day old data
-        const yesterStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-        if (history[yesterStr]) prevTotal = getHistoryTotal(history[yesterStr]);
+    const growthEl = document.querySelector('#statTotalHours')?.closest('.glass-panel')?.querySelector('.stat-trend');
+    if (growthEl) {
+        if (totalMsYester === 0) {
+            growthEl.innerHTML = totalMsToday > 0 ? '<i class="fa-solid fa-arrow-up"></i> New Activity' : '';
+        } else {
+            const diff = totalMsToday - totalMsYester;
+            const percent = Math.round((diff / totalMsYester) * 100);
+            if (percent >= 0) {
+                growthEl.innerHTML = `<i class="fa-solid fa-arrow-up"></i> ${percent}% vs yesterday`;
+                growthEl.style.color = '#10b981';
+            } else {
+                growthEl.innerHTML = `<i class="fa-solid fa-arrow-down"></i> ${Math.abs(percent)}% vs yesterday`;
+                growthEl.style.color = '#ef4444';
+            }
+        }
     }
-
-    let growth = 0;
-    if (prevTotal > 0) {
-        growth = ((todayTotal - prevTotal) / prevTotal) * 100;
-    } else if (todayTotal > 0) {
-        growth = 100;
-    }
-
-    const badge = document.getElementById('trafficGrowthBadge');
-    if (badge) {
-        const isPositive = growth >= 0;
-        const iconInfo = isPositive ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down';
-        const colorInfo = isPositive ? '#10b981' : '#ef4444';
-        const bgInfo = isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
-
-        badge.style.color = colorInfo;
-        badge.style.background = bgInfo;
-        badge.innerHTML = `<i class="fa-solid ${iconInfo}"></i> ${Math.abs(growth).toFixed(1)}% ${isPositive ? 'Growth' : 'Decrease'}`;
-    }
-
-    // 2. Update Chart (Preserve User's Date selection if any, else default to today)
-    const dateFilter = document.getElementById('chartDateFilter');
-    const selectedDate = dateFilter && dateFilter.value ? dateFilter.value : null;
-    initTrafficChart(selectedDate);
 };
+// Note: renderWorkHoursStats replaces the old renderTrafficStats logic
+
 
 // Seeder for Dummy Data
 const seedDummyHistory = () => {
@@ -1333,14 +1417,64 @@ document.addEventListener('DOMContentLoaded', () => {
                         );
                         const packageId = foundPkg ? foundPkg.id : rawPackage;
 
+                        // Helper to normalize any date string to YYYY-MM-DD for HTML date inputs
+                        const normalizeDate = (dStr) => {
+                            if (!dStr) return '';
+                            dStr = dStr.trim();
+                            // Check if it's already YYYY-MM-DD
+                            if (/^\d{4}-\d{2}-\d{2}$/.test(dStr)) return dStr;
+                            
+                            // Check for DD/MM/YYYY or DD-MM-YYYY (Common manual/Excel format where Month is middle)
+                            // If parts[1] is > 12, it must be MM/DD/YYYY, but let's try to handle standard DD-MM-YYYY first
+                            const parts = dStr.split(/[-/]/);
+                            if (parts.length === 3) {
+                                // If year is last (DD-MM-YYYY or MM-DD-YYYY or D-M-YY)
+                                if (parts[2].length >= 2) {
+                                    let year = parts[2];
+                                    if (year.length === 2) {
+                                        year = parseInt(year) > 50 ? '19' + year : '20' + year; // Basic 2-digit year guess
+                                    }
+                                    let month = parts[1].padStart(2, '0');
+                                    let day = parts[0].padStart(2, '0');
+                                    
+                                    // If month > 12, it must have been MM/DD/YYYY
+                                    if (parseInt(month) > 12) {
+                                        const temp = month;
+                                        month = day;
+                                        day = temp;
+                                    }
+                                    
+                                    const formatted = `${year}-${month}-${day}`;
+                                    // Validate if the resulting date is real
+                                    if (!isNaN(new Date(formatted).getTime())) {
+                                        return formatted;
+                                    }
+                                }
+                            }
+
+                            // Fallback: Let JS try to parse it (handles "12 Oct 2023", "2023/10/12", "10/12/2023" MM/DD/YYYY)
+                            const parsedDate = new Date(dStr);
+                            if (!isNaN(parsedDate.getTime())) {
+                                const yyyy = parsedDate.getFullYear();
+                                const mm = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                                const dd = String(parsedDate.getDate()).padStart(2, '0');
+                                return `${yyyy}-${mm}-${dd}`;
+                            }
+
+                            return dStr; // Utter fallback
+                        };
+
+                        const rawDoj = cols[3]?.trim() || '';
+                        const rawDob = cols[6]?.trim() || '';
+
                         STATE.employees.push({
                             id: cols[0].trim(),
                             name: cols[1].trim(),
                             role: role,
-                            doj: cols[3].trim(),
-                            edu: cols[4].trim(),
-                            mobile: cols[5].trim(),
-                            dob: cols[6]?.trim() || '',
+                            doj: normalizeDate(rawDoj),
+                            edu: cols[4]?.trim() || '',
+                            mobile: cols[5]?.trim() || '',
+                            dob: normalizeDate(rawDob),
                             email: cols[7]?.trim() || '',
                             secretCode: cols[8]?.trim() || generateSecretCode(cols[1].trim()),
                             salaryPackage: packageId,
@@ -1415,13 +1549,44 @@ document.addEventListener('DOMContentLoaded', () => {
     if (imgInput) {
         imgInput.addEventListener('change', function () {
             if (this.files && this.files[0]) {
+                const file = this.files[0];
                 const reader = new FileReader();
                 reader.onload = function (e) {
-                    imgDisplay.src = e.target.result;
-                    imgDisplay.style.display = 'block';
-                    imgIcon.style.display = 'none';
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const MAX_SIZE = 400; // Cap width/height
+                        let width = img.width;
+                        let height = img.height;
+
+                        // Maintain aspect ratio while sizing down
+                        if (width > height) {
+                            if (width > MAX_SIZE) {
+                                height *= MAX_SIZE / width;
+                                width = MAX_SIZE;
+                            }
+                        } else {
+                            if (height > MAX_SIZE) {
+                                width *= MAX_SIZE / height;
+                                height = MAX_SIZE;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // Compress to webp for massive size reduction in localStorage
+                        const compressedBase64 = canvas.toDataURL('image/webp', 0.6);
+                        
+                        imgDisplay.src = compressedBase64;
+                        imgDisplay.style.display = 'block';
+                        imgIcon.style.display = 'none';
+                    };
+                    img.src = e.target.result;
                 };
-                reader.readAsDataURL(this.files[0]);
+                reader.readAsDataURL(file);
             }
         });
     }
@@ -2017,6 +2182,10 @@ const showConfirm = (title, msg, onConfirm, iconClass = 'fa-circle-question', ty
     window.pendingConfirmCallback = onConfirm;
     if (modal) modal.classList.add('active');
 };
+
+window.showSuccess = showSuccess;
+window.showConfirm = showConfirm;
+
 
 const getVal = (id) => {
     const val = document.getElementById(id).value;
@@ -2753,37 +2922,79 @@ const renderTrafficIntelligence = (monthStr) => {
     initMonthlyTrafficChart(chartLabels, chartData, 'monthlyTrafficChart');
 };
 
-const handleDashTrafficFilter = () => {
+const handleDashWorkHoursFilter = () => {
     const monthStr = document.getElementById('dashTrafficMonthFilter').value;
-    renderDashTrafficIntelligence(monthStr);
+    renderDashWorkHours(monthStr);
 };
 
-const renderDashTrafficIntelligence = (monthStr) => {
-    const history = JSON.parse(localStorage.getItem('alienTrafficHistory') || '{}');
+const renderDashWorkHours = (monthStr) => {
+    let logs = JSON.parse(localStorage.getItem('gravityHrTimerLogs') || localStorage.getItem('gravityHrLogs') || '[]');
+    const stateData = JSON.parse(localStorage.getItem('gravity_hrm_state') || '{"employees":[]}');
+
+    // Role-based filtering
+    if (typeof Auth !== 'undefined') {
+        const currentUser = Auth.getCurrentUser();
+        if (currentUser) {
+            // Ensure chart container is visible ONLY if in dashboard section
+            const chartCont = document.getElementById('chartContainer');
+            const currentSec = localStorage.getItem('activeDashboardSection') || 'dashboard';
+            if (chartCont && currentSec === 'dashboard') {
+                chartCont.style.display = 'block';
+            } else if (chartCont) {
+                chartCont.style.display = 'none';
+            }
+
+            if (currentUser.role === 'Team Leader') {
+                const subordinateIds = stateData.employees
+                    .filter(emp => emp.teamLeaderId === currentUser.id)
+                    .map(emp => emp.id);
+                // Include subordinates and own logs
+                logs = logs.filter(log => subordinateIds.includes(log.userId) || log.userId === currentUser.id);
+            } else if (currentUser.role === 'Manager') {
+                // For Manager: Find all TLs reporting to this manager, then find all employees reporting to those TLs or the manager
+                const myTLs = stateData.employees.filter(e => e.reportsTo === currentUser.id && e.role === 'Team Leader').map(e => e.id);
+                const subordinateIds = stateData.employees
+                    .filter(emp => emp.managerId === currentUser.id || emp.reportsTo === currentUser.id || myTLs.includes(emp.reportsTo))
+                    .map(emp => emp.id);
+                
+                logs = logs.filter(log => subordinateIds.includes(log.userId) || log.userId === currentUser.id);
+            } else if (currentUser.role === 'Employee' || currentUser.role === 'IT Team') {
+                // Employees only see their own logs
+                logs = logs.filter(log => log.userId === currentUser.id);
+            }
+        }
+    }
+
     const daysInMonth = getDaysInMonth(monthStr);
     const trendLabels = [];
     const trendData = [];
-    const userStats = {};
+    const projectStats = {};
 
     for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${monthStr}-${String(day).padStart(2, '0')}`;
-        const entry = history[dateStr];
-        const total = (entry && typeof entry === 'object') ? (entry.total || 0) : ((typeof entry === 'number') ? entry : 0);
-        const contributors = (entry && entry.contributors) ? entry.contributors : {};
+        const dayLogs = logs.filter(l => l.date === dateStr);
+        const totalMs = dayLogs.reduce((acc, log) => acc + (log.durationMs || 0), 0);
+        const totalHours = parseFloat((totalMs / (1000 * 60 * 60)).toFixed(2));
 
         trendLabels.push(String(day));
-        trendData.push(total);
+        trendData.push(totalHours);
 
-        // Aggregate User Contributions (Total Volume per User)
-        Object.entries(contributors).forEach(([id, info]) => {
-            const name = info && typeof info === 'object' ? (info.name || 'Unknown') : (info || 'Unknown');
-            if (!userStats[name]) userStats[name] = 0;
-            userStats[name] += 1;
+        // Aggregate Project Distributions for the whole month
+        dayLogs.forEach(log => {
+            const projectName = log.projectName || 'Unassigned';
+            if (!projectStats[projectName]) projectStats[projectName] = 0;
+            const hours = log.durationMs / (1000 * 60 * 60);
+            projectStats[projectName] += hours;
         });
     }
 
+    // Round project stats to 1 decimal
+    Object.keys(projectStats).forEach(p => {
+        projectStats[p] = parseFloat(projectStats[p].toFixed(1));
+    });
+
     initMonthlyTrafficChart(trendLabels, trendData, 'trafficChart');
-    initUserContribChart(Object.keys(userStats), Object.values(userStats));
+    initUserContribChart(Object.keys(projectStats), Object.values(projectStats));
 };
 
 let userContribChartObj = null;
@@ -2791,6 +3002,8 @@ const initUserContribChart = (labels, data) => {
     const ctx = document.getElementById('userContribChart');
     if (!ctx) return;
     if (userContribChartObj) userContribChartObj.destroy();
+
+    const isDark = (typeof STATE !== 'undefined' && STATE.theme === 'dark');
 
     userContribChartObj = new Chart(ctx, {
         type: 'doughnut',
@@ -2800,17 +3013,61 @@ const initUserContribChart = (labels, data) => {
                 data: data,
                 backgroundColor: ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4'],
                 borderWidth: 0,
-                hoverOffset: 10
+                hoverOffset: 15
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { position: 'bottom', labels: { color: STATE.theme === 'dark' ? '#cbd5e1' : '#475569', boxWidth: 12, font: { size: 10 } } }
+                legend: { 
+                    position: 'bottom', 
+                    labels: { 
+                        color: isDark ? '#94a3b8' : '#475569', 
+                        boxWidth: 8, 
+                        padding: 20,
+                        usePointStyle: true,
+                        font: { size: 10, weight: '500' } 
+                    } 
+                }
             },
-            cutout: '65%'
-        }
+            cutout: '75%'
+        },
+        plugins: [{
+            id: 'textCenter',
+            beforeDraw: function (chart) {
+                var width = chart.width,
+                    height = chart.height,
+                    ctx = chart.ctx;
+
+                ctx.restore();
+
+                var total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                if (total === 0 && chart.data.datasets[0].data.length === 0) return;
+
+                // Main Text (Total Hours)
+                ctx.font = "800 2.4rem 'Outfit', sans-serif";
+                ctx.textBaseline = "middle";
+                ctx.fillStyle = isDark ? '#ffffff' : '#1e293b';
+
+                var text = total.toFixed(1) + "h",
+                    textX = Math.round((width - ctx.measureText(text).width) / 2),
+                    textY = height / 2 - 12;
+
+                ctx.fillText(text, textX, textY);
+
+                // Subtitle (Total)
+                ctx.font = "500 0.9rem 'Outfit', sans-serif";
+                ctx.fillStyle = isDark ? 'rgba(255,255,255,0.5)' : '#64748b';
+                var subText = "Total";
+                var subTextX = Math.round((width - ctx.measureText(subText).width) / 2);
+                var subTextY = height / 2 + 25;
+
+                ctx.fillText(subText, subTextX, subTextY);
+
+                ctx.save();
+            }
+        }]
     });
 };
 
@@ -2822,24 +3079,21 @@ const initMonthlyTrafficChart = (labels, data, canvasId = 'monthlyTrafficChart')
     if (canvasId === 'monthlyTrafficChart' && window.monthlyTrafficChartObj) window.monthlyTrafficChartObj.destroy();
     if (canvasId === 'trafficChart' && window.dashTrafficChartObj) window.dashTrafficChartObj.destroy();
 
-    const isDark = STATE.theme === 'dark';
-    const textColor = isDark ? '#f8fafc' : '#1e293b';
+    const isDark = (typeof STATE !== 'undefined' && STATE.theme === 'dark');
+    const textColor = isDark ? 'rgba(255,255,255,0.4)' : '#64748b';
     const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
-
-    const gtx = ctx.getContext('2d');
-    const gradient = gtx.createLinearGradient(0, 0, 0, 300);
-    gradient.addColorStop(0, 'rgba(0, 242, 254, 0.4)');
-    gradient.addColorStop(1, 'rgba(0, 242, 254, 0)');
 
     const chartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
             datasets: [{
-                label: 'Volume',
+                label: 'Hours',
                 data: data,
                 backgroundColor: '#00f2fe',
-                borderRadius: 4
+                borderRadius: 4,
+                barThickness: 18,
+                maxBarThickness: 25
             }]
         },
         options: {
@@ -2847,11 +3101,24 @@ const initMonthlyTrafficChart = (labels, data, canvasId = 'monthlyTrafficChart')
             maintainAspectRatio: false,
             plugins: {
                 legend: { display: false },
-                tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', cornerRadius: 8 }
+                tooltip: { 
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)', 
+                    cornerRadius: 8,
+                    padding: 12,
+                    titleFont: { size: 12 },
+                    bodyFont: { size: 13 }
+                }
             },
             scales: {
-                y: { beginAtZero: true, grid: { color: gridColor, drawBorder: false }, ticks: { color: textColor, font: { size: 9 } } },
-                x: { grid: { display: false }, ticks: { color: textColor, font: { size: 9 } } }
+                y: { 
+                    beginAtZero: true, 
+                    grid: { color: gridColor, drawBorder: false }, 
+                    ticks: { color: textColor, font: { size: 10, weight: '500' }, padding: 10 } 
+                },
+                x: { 
+                    grid: { display: false }, 
+                    ticks: { color: textColor, font: { size: 10, weight: '500' }, padding: 10 } 
+                }
             }
         }
     });
@@ -2882,11 +3149,8 @@ window.renderCorporateReports = renderCorporateReports;
 window.renderAttendanceAudit = renderAttendanceAudit;
 window.exportRoleFinance = exportRoleFinance;
 window.exportAuditLogs = exportAuditLogs;
-window.renderTrafficIntelligence = renderTrafficIntelligence;
-window.viewDailyDetail = viewDailyDetail;
-window.seedDummyHistory = seedDummyHistory;
-window.handleDashTrafficFilter = handleDashTrafficFilter;
-window.renderDashTrafficIntelligence = renderDashTrafficIntelligence;
+window.renderDashWorkHours = renderDashWorkHours;
+window.handleDashWorkHoursFilter = handleDashWorkHoursFilter;
 
 // Initial Load
 loadData();
